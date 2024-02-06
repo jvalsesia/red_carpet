@@ -7,7 +7,10 @@ use axum::{
 use tera::Tera;
 
 use crate::{
-    handlers::{create_employee, employees_list, health_checker, index},
+    handlers::{
+        create_employee, employees_list, generate_handle_and_password, get_employee,
+        health_checker, index,
+    },
     models,
 };
 
@@ -27,6 +30,10 @@ pub async fn define_routes() -> Router {
         .route(
             "/api/v1/employees",
             post(create_employee).get(employees_list),
+        )
+        .route(
+            "/api/v1/employees/:id",
+            get(get_employee).patch(generate_handle_and_password),
         )
         .route("/", get(index))
         .layer(Extension(Arc::new(tera)))

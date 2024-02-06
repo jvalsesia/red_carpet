@@ -16,6 +16,10 @@ pub struct Employee {
     pub diploma: String,
     #[serde(skip_deserializing)]
     pub onboarded: Option<bool>,
+    #[serde(skip_deserializing)]
+    pub handle: Option<String>,
+    #[serde(skip_deserializing)]
+    pub password: Option<String>,
 }
 
 #[derive(Serialize, Debug)]
@@ -36,14 +40,22 @@ pub struct EmployeeListResponse {
     pub todos: Vec<Employee>,
 }
 
-pub type DB = Arc<Mutex<Vec<Employee>>>;
-
-pub fn employee_db() -> DB {
-    Arc::new(Mutex::new(Vec::new()))
+#[allow(non_snake_case)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct UpdateEmployeeSchema {
+    pub title: Option<String>,
+    pub content: Option<String>,
+    pub completed: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, Default)]
 pub struct QueryOptions {
     pub page: Option<usize>,
     pub limit: Option<usize>,
+}
+
+pub type DB = Arc<Mutex<Vec<Employee>>>;
+
+pub fn employee_db() -> DB {
+    Arc::new(Mutex::new(Vec::new()))
 }

@@ -6,6 +6,7 @@ use crate::routes::define_routes;
 pub mod handlers;
 pub mod models;
 pub mod routes;
+pub mod utils;
 
 #[tokio::main]
 async fn main() {

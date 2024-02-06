@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::{
-    extract::{Query, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     response::{Html, IntoResponse},
     Extension, Json,
@@ -10,8 +10,11 @@ use log::debug;
 use tera::{Context, Tera};
 use uuid::Uuid;
 
-use crate::models::{
-    Employee, EmployeeData, EmployeeListResponse, QueryOptions, SimpleEmployeeResponse, DB,
+use crate::{
+    models::{
+        Employee, EmployeeData, EmployeeListResponse, QueryOptions, SimpleEmployeeResponse, DB,
+    },
+    utils::generate_random_password,
 };
 
 type Templates = Arc<Tera>;
@@ -106,6 +109,72 @@ pub async fn employees_list(
     debug!("{json_response:?}");
     Json(json_response)
 }
+
+pub async fn get_employee(
+    Path(id): Path<Uuid>,
+    State(db): State<DB>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let vec = db.lock().await;
+
+    if let Some(employee) = vec
+        .iter()
+        .find(|employee: &&Employee| employee.id == Some(id))
+    {
+        let json_response = SimpleEmployeeResponse {
+            status: "success".to_string(),
+            data: EmployeeData {
+                employee: employee.clone(),
+            },
+        };
+        debug!("{json_response:?}");
+        return Ok((StatusCode::OK, Json(json_response)));
+    }
+
+    let error_response = serde_json::json!({
+        "status": "fail",
+        "message": format!("Employee with ID: {} not found", id)
+    });
+    debug!("{error_response:?}");
+    Err((StatusCode::NOT_FOUND, Json(error_response)))
+}
+
+pub async fn generate_handle_and_password(
+    Path(id): Path<Uuid>,
+    State(db): State<DB>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let mut vec = db.lock().await;
+
+    if let Some(employee) = vec.iter_mut().find(|employee| employee.id == Some(id)) {
+        let payload = Employee {
+            id: employee.id,
+            first_name: employee.first_name.clone(),
+            last_name: employee.last_name.clone(),
+            email: employee.email.clone(),
+            age: employee.age,
+            diploma: employee.diploma.clone(),
+            onboarded: Some(true),
+            handle: Some(employee.first_name.clone()),
+            password: Some(generate_random_password()),
+        };
+        *employee = payload;
+
+        let json_response = SimpleEmployeeResponse {
+            status: "success".to_string(),
+            data: EmployeeData {
+                employee: employee.clone(),
+            },
+        };
+        Ok((StatusCode::OK, Json(json_response)))
+    } else {
+        let error_response = serde_json::json!({
+            "status": "fail",
+            "message": format!("Employee with ID: {} not found", id)
+        });
+
+        Err((StatusCode::NOT_FOUND, Json(error_response)))
+    }
+}
+
 pub async fn index(Extension(templates): Extension<Templates>) -> impl IntoResponse {
     Html(templates.render("index", &Context::new()).unwrap())
 }
