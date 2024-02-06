@@ -14,7 +14,7 @@ use crate::{
     models::{
         Employee, EmployeeData, EmployeeListResponse, QueryOptions, SimpleEmployeeResponse, DB,
     },
-    utils::generate_random_password,
+    utils::{generate_handle, generate_random_password},
 };
 
 type Templates = Arc<Tera>;
@@ -145,16 +145,19 @@ pub async fn generate_handle_and_password(
     let mut vec = db.lock().await;
 
     if let Some(employee) = vec.iter_mut().find(|employee| employee.id == Some(id)) {
+        let new_handle =
+            generate_handle(employee.first_name.clone(), employee.last_name.clone()).await;
+
         let payload = Employee {
             id: employee.id,
             first_name: employee.first_name.clone(),
             last_name: employee.last_name.clone(),
-            email: employee.email.clone(),
+            email: Some(format!("{}@avaya.com", new_handle)),
             age: employee.age,
             diploma: employee.diploma.clone(),
             onboarded: Some(true),
-            handle: Some(employee.first_name.clone()),
-            password: Some(generate_random_password()),
+            handle: Some(new_handle),
+            password: Some(generate_random_password().await),
         };
         *employee = payload;
 

@@ -11,7 +11,7 @@ pub struct Employee {
     pub first_name: String,
     pub last_name: String,
     #[serde(skip_deserializing)]
-    pub email: String,
+    pub email: Option<String>,
     pub age: u32,
     pub diploma: String,
     #[serde(skip_deserializing)]

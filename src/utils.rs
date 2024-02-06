@@ -1,6 +1,14 @@
 use rand::seq::SliceRandom;
 
-pub fn generate_random_password() -> String {
+pub async fn generate_handle(first_name: String, last_name: String) -> String {
+    format!(
+        "{}{}",
+        first_name.to_lowercase().chars().nth(0).unwrap(),
+        last_name.to_ascii_lowercase()
+    )
+}
+
+pub async fn generate_random_password() -> String {
     let lower_case = "abcdefghijklmnopqrstuvxyz";
     let upper_case = "ABCDEFGHIJKLMNOPQRSTUVXYZ";
     let numbers = "1234567890";
