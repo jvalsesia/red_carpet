@@ -139,7 +139,7 @@
 			"response": []
 		},
 		{
-			"name": "Not Onboarded Employees",
+			"name": "List Not Onboarded Employees",
 			"request": {
 				"method": "GET",
 				"header": [],
@@ -167,6 +167,56 @@
 							"key": "limit",
 							"value": "30"
 						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Employee",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8080/api/v1/employees/76e75415-e8e3-48e8-8313-54f41e25b7dc",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"employees",
+						"76e75415-e8e3-48e8-8313-54f41e25b7dc"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Generate handle and password",
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8080/api/v1/employees/09e42dcc-8947-4cf7-89f4-fe0141afba71",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"employees",
+						"09e42dcc-8947-4cf7-89f4-fe0141afba71"
 					]
 				}
 			},
