@@ -1,0 +1,22 @@
+[package]
+name = "red_carpet"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+axum = { version = "0.7.4", features = ["macros"] }
+axum-auth = "0.7.0"
+chrono = { version = "0.4.33", features = ["serde"] }
+log = "0.4.20"
+pbkdf2 = { version = "0.12.2", features = ["simple"] }
+pretty_env_logger = "0.5.0"
+rand = "0.8.5"
+rand_core = { version = "0.6.4", features = ["std"] }
+serde = { version = "1.0.196", features = ["derive"] }
+serde_json = "1.0.113"
+tera = "1.19.1"
+thiserror = "1.0.56"
+tokio = { version = "1.36.0", features = ["full"] }
+uuid = { version = "1.7.0", features = ["v4", "serde"] }
