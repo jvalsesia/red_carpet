@@ -3,17 +3,13 @@ Red Carpet onboarding process - Rust
 
 ## Requirements
 ### User stories
-As a new employee, I want to submit my personal details, so that the Avaya IT department can 
-create a user handle and a password.
+As a new employee, I want to submit my personal details, so that the Avaya IT department can create a user handle and a password.
 
-As an IT technician, I want to see the list of user ids that must be onboarded, so that I can see 
-what Ids must be processed today.
+As an IT technician, I want to see the list of user ids that must be onboarded, so that I can see what Ids must be processed today.
 
-As an IT technician, I want the solution to automatically generate a user handle and a random 
-password for new employees, so that I can have time to learn Rust.
+As an IT technician, I want the solution to automatically generate a user handle and a random password for new employees, so that I can have time to learn Rust.
 
-As a new employee, I want to securely view my submission details, so that I can check if there 
-are any errors.
+As a new employee, I want to securely view my submission details, so that I can check if there are any errors.
 
 ### Functional requirements:
 - Standalone web application with these REST API endpoints:
@@ -26,16 +22,14 @@ are any errors.
 
 - [GET] Secured endpoint (basic auth) to view the employee details after IT set up the password. Generated passwords must be unique, exactly 9 characters long, include: an uppercase character, a number and a special character. The special character cannot be at the end, and the uppercase character not at the start. Therefore Avaya123! Is not a valid password.
 
-- User handles must be unique and must be usable in an email address. They should have a 
-meaningful relation to the employee’s first and last name.
+- User handles must be unique and must be usable in an email address. They should have a meaningful relation to the employee’s first and last name.
 
 ### Non-functional requirements:
 - The data should be persisted
 - It should support concurrent access
 
 ### Out of scope:
-- Transport of the credentials to the employee; assume there is a secure way to pass these from IT 
-to the employee
+- Transport of the credentials to the employee; assume there is a secure way to pass these from IT to the employee
 - High performance
 
 ## Init
