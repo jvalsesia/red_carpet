@@ -51,6 +51,50 @@
 			"response": []
 		},
 		{
+			"name": "Create Employee Duplicate",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"first_name\": \"Julio\",\n    \"last_name\": \"Valsesia\",\n    \"age\": 47,\n    \"diploma\": \"Computer Science\" \n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8080/api/v1/employees",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"employees"
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "Create Employee No Diploma",
 			"event": [
 				{
@@ -203,7 +247,7 @@
 				"method": "PATCH",
 				"header": [],
 				"url": {
-					"raw": "http://127.0.0.1:8080/api/v1/employees/09e42dcc-8947-4cf7-89f4-fe0141afba71",
+					"raw": "http://127.0.0.1:8080/api/v1/employees/60de47fb-f6e3-4c69-82a2-d0cce3d9a9a6",
 					"protocol": "http",
 					"host": [
 						"127",
@@ -216,7 +260,7 @@
 						"api",
 						"v1",
 						"employees",
-						"09e42dcc-8947-4cf7-89f4-fe0141afba71"
+						"60de47fb-f6e3-4c69-82a2-d0cce3d9a9a6"
 					]
 				}
 			},

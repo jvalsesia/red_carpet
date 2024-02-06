@@ -3,6 +3,7 @@ use tokio::net::TcpListener;
 
 use crate::routes::define_routes;
 
+pub mod errors;
 pub mod handlers;
 pub mod models;
 pub mod routes;

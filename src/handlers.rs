@@ -11,6 +11,9 @@ use tera::{Context, Tera};
 use uuid::Uuid;
 
 use crate::{
+    errors::{
+        employee_already_exists_error, employee_no_diploma_error, employee_not_old_enough_error,
+    },
     models::{
         Employee, EmployeeData, EmployeeListResponse, QueryOptions, SimpleEmployeeResponse, DB,
     },
@@ -36,12 +39,12 @@ pub async fn create_employee(
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let mut vec = db.lock().await;
 
-    if let Some(employee) = vec.iter().find(|employee: &&Employee| {
+    if let Some(_employee) = vec.iter().find(|employee: &&Employee| {
         employee.first_name == body.first_name && employee.last_name == body.last_name
     }) {
         let error_response = serde_json::json!({
             "status": "fail",
-            "message": format!("Employee: '{} {}' already exists!", employee.first_name, employee.last_name),
+            "message": employee_already_exists_error(body.first_name, body.last_name).err().unwrap().to_string(),
         });
         return Err((StatusCode::CONFLICT, Json(error_response)));
     }
@@ -49,7 +52,7 @@ pub async fn create_employee(
     if body.age < 18 {
         let error_response = serde_json::json!({
             "status": "fail",
-            "message": format!("Employee: '{} {}' is not 18 years old!", body.first_name, body.last_name),
+            "message": employee_not_old_enough_error(body.first_name, body.last_name).err().unwrap().to_string(),
         });
         return Err((StatusCode::EXPECTATION_FAILED, Json(error_response)));
     }
@@ -57,7 +60,7 @@ pub async fn create_employee(
     if body.diploma.is_empty() {
         let error_response = serde_json::json!({
             "status": "fail",
-            "message": format!("Employee: '{} {}' does not have diploma!", body.first_name, body.last_name),
+            "message": employee_no_diploma_error( body.first_name, body.last_name).err().unwrap().to_string(),
         });
         return Err((StatusCode::EXPECTATION_FAILED, Json(error_response)));
     }

@@ -3,7 +3,7 @@ use rand::seq::SliceRandom;
 pub async fn generate_handle(first_name: String, last_name: String) -> String {
     format!(
         "{}{}",
-        first_name.to_lowercase().chars().nth(0).unwrap(),
+        first_name.to_lowercase().chars().next().unwrap(),
         last_name.to_ascii_lowercase()
     )
 }
