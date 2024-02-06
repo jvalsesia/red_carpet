@@ -4,7 +4,7 @@ pub async fn generate_handle(first_name: String, last_name: String) -> String {
     format!(
         "{}{}",
         first_name.to_lowercase().chars().next().unwrap(),
-        last_name.to_ascii_lowercase()
+        last_name.to_lowercase()
     )
 }
 
