@@ -1,8 +1,11 @@
 # red_carpet
+
 Red Carpet onboarding process - Rust
 
 ## Requirements
+
 ### User stories
+
 As a new employee, I want to submit my personal details, so that the Avaya IT department can create a user handle and a password.
 
 As an IT technician, I want to see the list of user ids that must be onboarded, so that I can see what Ids must be processed today.
@@ -11,7 +14,8 @@ As an IT technician, I want the solution to automatically generate a user handle
 
 As a new employee, I want to securely view my submission details, so that I can check if there are any errors.
 
-### Functional requirements:
+### Functional requirements
+
 - Standalone web application with these REST API endpoints:
 
 - [POST] Create an onboarding request by future employee. Validate that the person is at least 18 years old and has at least one diploma.
@@ -24,20 +28,24 @@ As a new employee, I want to securely view my submission details, so that I can 
 
 - User handles must be unique and must be usable in an email address. They should have a meaningful relation to the employee’s first and last name.
 
-### Non-functional requirements:
+### Non-functional requirements
+
 - The data should be persisted
 - It should support concurrent access
 
-### Out of scope:
+### Out of scope
+
 - Transport of the credentials to the employee; assume there is a secure way to pass these from IT to the employee
 - High performance
 
 ## Init
+
 ```sh
 cargo init
 ```
 
 ## Dependencies
+
 ```sh
 cargo add axum -F macros
 cargo add axum-auth
@@ -55,9 +63,10 @@ cargo add tera
 cargo add rand
 ```
 
-
 ## Environment
+
 Linux bash
+
 ```bash
 echo 'export RUST_LOG=debug' >> ~/.bash_profile
 source ~/.bash_profile
@@ -65,16 +74,17 @@ env
 ```
 
 MacOS zsh
+
 ```zsh
 echo 'export RUST_LOG=debug' >>  ~/.zshenv
 source  ~/.zshenv
 env
 ```
 
-
 ## References
-1. https://www.shuttle.rs/blog/2022/08/11/authentication-tutorial
-2. https://docs.rs/axum/latest/axum/
-3. https://docs.rs/tokio/latest/tokio/sync/index.html
-4. https://docs.rs/rand/latest/rand/seq/trait.SliceRandom.htm
-5. https://codevoweb.com/create-a-simple-api-in-rust-using-the-axum-framework
+
+1. <https://www.shuttle.rs/blog/2022/08/11/authentication-tutorial>
+2. <https://docs.rs/axum/latest/axum/>
+3. <https://docs.rs/tokio/latest/tokio/sync/index.html>
+4. <https://docs.rs/rand/latest/rand/seq/trait.SliceRandom.htm>
+5. <https://codevoweb.com/create-a-simple-api-in-rust-using-the-axum-framework>
