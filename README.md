@@ -86,5 +86,5 @@ env
 1. <https://www.shuttle.rs/blog/2022/08/11/authentication-tutorial>
 2. <https://docs.rs/axum/latest/axum/>
 3. <https://docs.rs/tokio/latest/tokio/sync/index.html>
-4. <https://docs.rs/rand/latest/rand/seq/trait.SliceRandom.htm>
+4. <https://docs.rs/rand/latest/rand/seq/trait.SliceRandom.html>
 5. <https://codevoweb.com/create-a-simple-api-in-rust-using-the-axum-framework>
