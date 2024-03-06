@@ -6,23 +6,26 @@ use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Employee {
-    #[serde(skip_deserializing)]
     pub id: Option<Uuid>,
     pub first_name: String,
     pub last_name: String,
-    #[serde(skip_deserializing)]
     pub email: Option<String>,
     pub age: u32,
     pub diploma: String,
-    #[serde(skip_deserializing)]
     pub onboarded: Option<bool>,
-    #[serde(skip_deserializing)]
     pub handle: Option<String>,
-    #[serde(skip_deserializing)]
     pub password: Option<String>,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct EmployeeRequestBody {
+    pub first_name: String,
+    pub last_name: String,
+    pub age: u32,
+    pub diploma: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct EmployeeData {
     pub employee: Employee,
 }
@@ -52,6 +55,12 @@ pub struct UpdateEmployeeSchema {
 pub struct QueryOptions {
     pub page: Option<usize>,
     pub limit: Option<usize>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct EmployeeErrorResponse {
+    pub status: String,
+    pub description: String,
 }
 
 pub type DB = Arc<Mutex<Vec<Employee>>>;

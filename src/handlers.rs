@@ -1,12 +1,12 @@
-use std::sync::Arc;
+use std::{fs, path, sync::Arc};
 
 use axum::{
     extract::{Path, Query, State},
     http::{self, Response, StatusCode},
-    response::{Html, IntoResponse},
+    response::{ErrorResponse, Html, IntoResponse},
     Extension, Json,
 };
-use log::debug;
+use log::{debug, info};
 use tera::{Context, Tera};
 use uuid::Uuid;
 
@@ -15,8 +15,10 @@ use crate::{
         employee_already_exists_error, employee_no_diploma_error, employee_not_old_enough_error,
     },
     models::{
-        Employee, EmployeeData, EmployeeListResponse, QueryOptions, SimpleEmployeeResponse, DB,
+        Employee, EmployeeData, EmployeeErrorResponse, EmployeeListResponse, EmployeeRequestBody,
+        QueryOptions, SimpleEmployeeResponse, DB,
     },
+    persistence::{list, save},
     utils::{generate_handle, generate_random_password},
 };
 
@@ -35,52 +37,68 @@ pub async fn health_checker() -> impl IntoResponse {
 
 pub async fn create_employee(
     State(db): State<DB>,
-    Json(mut body): Json<Employee>,
+    Json(mut body): Json<EmployeeRequestBody>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    let mut vec = db.lock().await;
+    // let mut vec = db.lock().await;
 
-    if let Some(_employee) = vec.iter().find(|employee: &&Employee| {
-        employee.first_name == body.first_name && employee.last_name == body.last_name
-    }) {
-        let error_response = serde_json::json!({
-            "status": "fail",
-            "message": employee_already_exists_error(body.first_name, body.last_name).err().unwrap().to_string(),
-        });
-        return Err((StatusCode::CONFLICT, Json(error_response)));
-    }
+    // if let Some(_employee) = vec.iter().find(|employee: &&Employee| {
+    //     employee.first_name == body.first_name && employee.last_name == body.last_name
+    // }) {
+    //     let error_response = serde_json::json!({
+    //         "status": "fail",
+    //         "message": employee_already_exists_error(body.first_name, body.last_name).err().unwrap().to_string(),
+    //     });
+    //     return Err((StatusCode::CONFLICT, Json(error_response)));
+    // }
 
-    if body.age < 18 {
-        let error_response = serde_json::json!({
-            "status": "fail",
-            "message": employee_not_old_enough_error(body.first_name, body.last_name).err().unwrap().to_string(),
-        });
-        return Err((StatusCode::EXPECTATION_FAILED, Json(error_response)));
-    }
+    // if body.age < 18 {
+    //     let error_response = serde_json::json!({
+    //         "status": "fail",
+    //         "message": employee_not_old_enough_error(body.first_name, body.last_name).err().unwrap().to_string(),
+    //     });
+    //     return Err((StatusCode::EXPECTATION_FAILED, Json(error_response)));
+    // }
 
-    if body.diploma.is_empty() {
-        let error_response = serde_json::json!({
-            "status": "fail",
-            "message": employee_no_diploma_error( body.first_name, body.last_name).err().unwrap().to_string(),
-        });
-        return Err((StatusCode::EXPECTATION_FAILED, Json(error_response)));
-    }
+    // if body.diploma.is_empty() {
+    //     let error_response = serde_json::json!({
+    //         "status": "fail",
+    //         "message": employee_no_diploma_error( body.first_name, body.last_name).err().unwrap().to_string(),
+    //     });
+    //     return Err((StatusCode::EXPECTATION_FAILED, Json(error_response)));
+    // }
 
-    let uuid_id = Uuid::new_v4();
-    //let datetime = chrono::Utc::now();
-
-    body.id = Some(uuid_id);
-    body.onboarded = Some(false);
-
-    let employee = body.to_owned();
-
-    vec.push(body);
-
-    let json_response = SimpleEmployeeResponse {
-        status: "success".to_string(),
-        data: EmployeeData { employee },
+    let employee = Employee {
+        id: Some(Uuid::new_v4()),
+        first_name: body.first_name,
+        last_name: body.last_name,
+        email: None,
+        age: body.age,
+        diploma: body.diploma,
+        onboarded: Some(false),
+        handle: None,
+        password: None,
     };
-    debug!("{json_response:?}");
-    Ok((StatusCode::CREATED, Json(json_response)))
+
+    //vec.push(body);
+
+    let save_result = save(employee.clone()).await;
+    match save_result {
+        Ok(_) => {
+            let json_response = SimpleEmployeeResponse {
+                status: "success".to_string(),
+                data: EmployeeData { employee },
+            };
+            Ok((StatusCode::CREATED, Json(json_response)))
+        }
+        Err(error) => {
+            debug!("{error:?}");
+            let json_response = SimpleEmployeeResponse {
+                status: "error".to_string(),
+                data: EmployeeData { employee },
+            };
+            Ok((StatusCode::NOT_MODIFIED, Json(json_response)))
+        }
+    }
 }
 
 pub async fn employees_list(
@@ -88,35 +106,62 @@ pub async fn employees_list(
     Extension(templates): Extension<Templates>,
     State(db): State<DB>,
 ) -> impl IntoResponse {
-    let employees = db.lock().await;
+    //let employees = db.lock().await;
 
     let Query(opts) = opts.unwrap_or_default();
 
     let limit = opts.limit.unwrap_or(10);
     let offset = (opts.page.unwrap_or(1) - 1) * limit;
 
-    // list not onboarded employees
-    let employees: Vec<Employee> = employees
-        .clone()
-        .into_iter()
-        .skip(offset)
-        .take(limit)
-        .filter(|employee: &Employee| employee.onboarded == Some(false))
-        .collect();
+    // let employee_file_path = path::Path::new("data/employee.json");
 
-    let json_response = EmployeeListResponse {
-        status: "success".to_string(),
-        results: employees.len(),
-        employees: employees.clone(),
-    };
-    debug!("{json_response:?}");
+    // let data = fs::read_to_string(employee_file_path).expect("Unable to read file");
 
-    let mut context = Context::new();
-    context.insert("employees", &employees.to_owned());
+    // let mut employees: Vec<Employee> = Vec::new();
+    // if fs::metadata(employee_file_path).unwrap().len() != 0 {
+    //     employees = serde_json::from_str(&data).unwrap();
+    // }
+    //debug!("{employees:?}");
 
-    Html(templates.render("employees", &context).unwrap())
+    // Ok(employees)
 
-    //Json(json_response)
+    let employees_list = list().await;
+
+    match employees_list {
+        Ok(employees) => {
+            // list not onboarded employees
+            let filtered_employees: Vec<Employee> = employees
+                .into_iter()
+                .skip(offset)
+                .take(limit)
+                .filter(|employee| employee.onboarded == Some(false))
+                .collect();
+            let json_response = EmployeeListResponse {
+                status: "success".to_string(),
+                results: filtered_employees.len(),
+                employees: filtered_employees.clone(),
+            };
+            debug!("{json_response:?}");
+            Ok((StatusCode::OK, Json(json_response)))
+        }
+        Err(error) => {
+            debug!("{error:?}");
+            let error_response = EmployeeErrorResponse {
+                status: "error".to_string(),
+                description: error.to_string(),
+            };
+            Err((StatusCode::NOT_MODIFIED, Json(error_response)))
+        }
+    }
+
+    //let filtered_employees = employees;
+
+    //debug!("{filtered_employees:?}");
+
+    //let mut context = Context::new();
+    //context.insert("employees", &employees.to_owned());
+
+    //Html(templates.render("employees", &context).unwrap())
 }
 
 pub async fn get_employee(

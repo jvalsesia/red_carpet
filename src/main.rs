@@ -1,11 +1,14 @@
+use std::fs::File;
+
 use log::info;
 use tokio::net::TcpListener;
 
-use crate::routes::define_routes;
+use crate::{persistence::create_persistence_file, routes::define_routes};
 
 pub mod errors;
 pub mod handlers;
 pub mod models;
+pub mod persistence;
 pub mod routes;
 pub mod utils;
 
@@ -13,6 +16,8 @@ pub mod utils;
 async fn main() {
     pretty_env_logger::init();
     info!("Avaya Rust Red Carpet");
+
+    let _ = create_persistence_file();
 
     let app = define_routes();
 
