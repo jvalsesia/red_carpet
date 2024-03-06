@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use axum::{
     extract::{Path, Query, State},
-    http::StatusCode,
+    http::{self, Response, StatusCode},
     response::{Html, IntoResponse},
     Extension, Json,
 };
@@ -85,6 +85,7 @@ pub async fn create_employee(
 
 pub async fn employees_list(
     opts: Option<Query<QueryOptions>>,
+    Extension(templates): Extension<Templates>,
     State(db): State<DB>,
 ) -> impl IntoResponse {
     let employees = db.lock().await;
@@ -106,15 +107,21 @@ pub async fn employees_list(
     let json_response = EmployeeListResponse {
         status: "success".to_string(),
         results: employees.len(),
-        todos: employees,
+        employees: employees.clone(),
     };
-
     debug!("{json_response:?}");
-    Json(json_response)
+
+    let mut context = Context::new();
+    context.insert("employees", &employees.to_owned());
+
+    Html(templates.render("employees", &context).unwrap())
+
+    //Json(json_response)
 }
 
 pub async fn get_employee(
     Path(id): Path<Uuid>,
+    Extension(templates): Extension<Templates>,
     State(db): State<DB>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let vec = db.lock().await;
@@ -130,7 +137,11 @@ pub async fn get_employee(
             },
         };
         debug!("{json_response:?}");
-        return Ok((StatusCode::OK, Json(json_response)));
+        let mut context = Context::new();
+        context.insert("employee", &employee);
+
+        //return Ok((StatusCode::OK, Json(json_response)));
+        return Ok(Html(templates.render("employee", &context).unwrap()));
     }
 
     let error_response = serde_json::json!({
@@ -183,4 +194,12 @@ pub async fn generate_handle_and_password(
 
 pub async fn index(Extension(templates): Extension<Templates>) -> impl IntoResponse {
     Html(templates.render("index", &Context::new()).unwrap())
+}
+
+pub async fn styles() -> impl IntoResponse {
+    Response::builder()
+        .status(http::StatusCode::OK)
+        .header("Content-Type", "text/css")
+        .body(include_str!("./public/styles.css").to_owned())
+        .unwrap()
 }

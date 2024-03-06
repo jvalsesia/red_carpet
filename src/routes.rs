@@ -9,7 +9,7 @@ use tera::Tera;
 use crate::{
     handlers::{
         create_employee, employees_list, generate_handle_and_password, get_employee,
-        health_checker, index,
+        health_checker, index, styles,
     },
     models,
 };
@@ -19,9 +19,10 @@ pub async fn define_routes() -> Router {
 
     let mut tera = Tera::default();
     tera.add_raw_templates(vec![
-        ("base.html", include_str!("./templates/base.html")),
-        ("welcome.html", include_str!("./templates/welcome.html")),
         ("index", include_str!("./templates/index.html")),
+        ("base.html", include_str!("./templates/base.html")),
+        ("employees", include_str!("./templates/employees.html")),
+        ("employee", include_str!("./templates/employee.html")),
     ])
     .unwrap();
     // build our application with a route
@@ -36,6 +37,9 @@ pub async fn define_routes() -> Router {
             get(get_employee).patch(generate_handle_and_password),
         )
         .route("/", get(index))
+        .route("/styles.css", get(styles))
+        .route("/employees", get(employees_list))
+        .route("/employee/:id", get(get_employee))
         .layer(Extension(Arc::new(tera)))
         .with_state(db)
 }

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{first_name}}{% endblock title %}
+{% block content %}
+
+<table>
+    <tr>
+        <th>First Name</th>
+        <td>{{ employee.first_name }}</td>
+    </tr>
+    <tr>
+        <th>Last Surname</th>
+        <td>{{ employee.last_name }}</td>
+    </tr>
+    <tr>
+        <th>email</th>
+        <td>{{ employee.email }}</td>
+    </tr>
+    <tr>
+        <th>Age</th>
+        <td>{{ employee.age }}</td>
+    </tr>
+    <tr>
+        <th>Diploma</th>
+        <td>{{ employee.diploma }}</td>
+    </tr>
+    <tr>
+        <th>Handle</th>
+        <td>{{ employee.handle }}</td>
+    </tr>
+</table>
+{% if is_self %}
+<form method="post" action="/delete">
+    <input type="submit" value="Delete account">
+</form>
+{% endif %}
+{% endblock content %}

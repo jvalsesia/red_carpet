@@ -37,7 +37,7 @@ pub struct SimpleEmployeeResponse {
 pub struct EmployeeListResponse {
     pub status: String,
     pub results: usize,
-    pub todos: Vec<Employee>,
+    pub employees: Vec<Employee>,
 }
 
 #[allow(non_snake_case)]
