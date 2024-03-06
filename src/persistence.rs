@@ -10,7 +10,7 @@ use std::{
 const DATA_DIR: &str = "data";
 const DATA_FILE: &str = "data/employees.json";
 
-pub fn create_persistence_file() -> Result<()> {
+pub fn create_persistence_store() -> Result<()> {
     if Path::new(DATA_DIR).exists() {
         info!("Persistence directory already exists: {DATA_DIR:?}");
     } else {
