@@ -81,6 +81,12 @@ source  ~/.zshenv
 env
 ```
 
+## Troubleshooting
+```sh
+lsof -Pan -i | grep 8080
+lsof -Pan -i | grep red_carp
+```
+
 ## References
 
 1. <https://www.shuttle.rs/blog/2022/08/11/authentication-tutorial>
@@ -88,3 +94,5 @@ env
 3. <https://docs.rs/tokio/latest/tokio/sync/index.html>
 4. <https://docs.rs/rand/latest/rand/seq/trait.SliceRandom.html>
 5. <https://codevoweb.com/create-a-simple-api-in-rust-using-the-axum-framework>
+
+
