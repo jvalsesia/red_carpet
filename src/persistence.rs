@@ -1,7 +1,9 @@
 use log::{debug, info};
+use uuid::Uuid;
 
 use crate::models::Employee;
 use std::{
+    collections::HashMap,
     fs::{self, File},
     io::Result,
     path::Path,
@@ -30,35 +32,40 @@ pub fn create_persistence_store() -> Result<()> {
 
 pub async fn save(employee: Employee) -> Result<String> {
     let employee_file_path = Path::new(DATA_FILE);
-
     let data = fs::read_to_string(employee_file_path).expect("Unable to read file");
+    let mut map_employees: HashMap<Uuid, Employee> = HashMap::new();
 
-    let mut employees: Vec<Employee> = Vec::new();
+    //let mut employees: Vec<Employee> = Vec::new();
     if fs::metadata(employee_file_path).unwrap().len() != 0 {
-        employees = serde_json::from_str(&data)?;
+        //  employees = serde_json::from_str(&data)?;
+        map_employees = serde_json::from_str(&data)?;
     }
-    employees.push(employee.clone());
+    map_employees.insert(employee.id.unwrap(), employee.clone());
+    // employees.push(employee.clone());
 
-    let json: String = serde_json::to_string_pretty(&employees)?;
+    let json: String = serde_json::to_string_pretty(&map_employees)?;
     fs::write(employee_file_path, &json).expect("Unable to write file");
     debug!("saving employee: {employee:?}");
 
     Ok(json)
 }
 
-pub async fn list() -> Result<Vec<Employee>> {
+pub async fn list() -> Result<HashMap<Uuid, Employee>> {
     let employee_file_path = Path::new(DATA_FILE);
 
     let data = fs::read_to_string(employee_file_path).expect("Unable to read file");
 
-    let mut employees: Vec<Employee> = Vec::new();
+    let mut map_employees: HashMap<Uuid, Employee> = HashMap::new();
+
+    //let mut employees: Vec<Employee> = Vec::new();
     if fs::metadata(employee_file_path).unwrap().len() != 0 {
-        employees = serde_json::from_str(&data)?;
+        //employees = serde_json::from_str(&data)?;
+        map_employees = serde_json::from_str(&data)?;
     }
 
-    let json: String = serde_json::to_string_pretty(&employees)?;
+    let json: String = serde_json::to_string_pretty(&map_employees)?;
     fs::write(employee_file_path, &json).expect("Unable to write file");
     println!("----------- end load -----------");
 
-    Ok(employees)
+    Ok(map_employees)
 }

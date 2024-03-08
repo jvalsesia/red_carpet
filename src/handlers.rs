@@ -1,4 +1,4 @@
-use std::{fs, path, sync::Arc};
+use std::{collections::HashMap, fs, path, sync::Arc};
 
 use axum::{
     extract::{Path, Query, State},
@@ -129,13 +129,20 @@ pub async fn employees_list(
 
     match employees_list {
         Ok(employees) => {
-            // list not onboarded employees
-            let filtered_employees: Vec<Employee> = employees
+            let filtered_employees: HashMap<Uuid, Employee> = employees
                 .into_iter()
                 .skip(offset)
                 .take(limit)
-                .filter(|employee| employee.onboarded == Some(false))
+                .filter(|(_id, employee)| employee.onboarded == Some(false))
                 .collect();
+
+            // // list not onboarded employees
+            // let filtered_employees: Vec<Employee> = employees
+            //     .into_iter()
+            //     .skip(offset)
+            //     .take(limit)
+            //     .filter(|employee| employee.onboarded == Some(false))
+            //     .collect();
             let json_response = EmployeeListResponse {
                 status: "success".to_string(),
                 results: filtered_employees.len(),
@@ -168,73 +175,170 @@ pub async fn get_employee(
     Path(id): Path<Uuid>,
     Extension(templates): Extension<Templates>,
     State(db): State<DB>,
-) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    let vec = db.lock().await;
+) -> impl IntoResponse {
+    //let vec = db.lock().await;
 
-    if let Some(employee) = vec
-        .iter()
-        .find(|employee: &&Employee| employee.id == Some(id))
-    {
-        let json_response = SimpleEmployeeResponse {
-            status: "success".to_string(),
-            data: EmployeeData {
-                employee: employee.clone(),
-            },
-        };
-        debug!("{json_response:?}");
-        let mut context = Context::new();
-        context.insert("employee", &employee);
+    let employees_list = list().await;
 
-        //return Ok((StatusCode::OK, Json(json_response)));
-        return Ok(Html(templates.render("employee", &context).unwrap()));
+    match employees_list {
+        Ok(employees) => {
+            // list not onboarded employees
+            let filtered_employees: HashMap<Uuid, Employee> = employees
+                .into_iter()
+                .filter(|(_id, employee)| employee.id == Some(id))
+                .collect();
+            // let filtered_employees: Vec<Employee> = employees
+            //     .into_iter()
+            //     .filter(|employee| employee.id == Some(id))
+            //     .collect();
+            let json_response = EmployeeListResponse {
+                status: "success".to_string(),
+                results: filtered_employees.len(),
+                employees: filtered_employees.clone(),
+            };
+            debug!("{json_response:?}");
+            Ok((StatusCode::OK, Json(json_response)))
+        }
+        Err(error) => {
+            debug!("{error:?}");
+            let error_response = EmployeeErrorResponse {
+                status: "error".to_string(),
+                description: error.to_string(),
+            };
+            Err((StatusCode::NOT_MODIFIED, Json(error_response)))
+        }
     }
+    // if let Some(employee) = vec
+    //     .iter()
+    //     .find(|employee: &&Employee| employee.id == Some(id))
+    // {
+    //     let json_response = SimpleEmployeeResponse {
+    //         status: "success".to_string(),
+    //         data: EmployeeData {
+    //             employee: employee.clone(),
+    //         },
+    //     };
+    //     debug!("{json_response:?}");
+    //     let mut context = Context::new();
+    //     context.insert("employee", &employee);
 
-    let error_response = serde_json::json!({
-        "status": "fail",
-        "message": format!("Employee with ID: {} not found", id)
-    });
-    debug!("{error_response:?}");
-    Err((StatusCode::NOT_FOUND, Json(error_response)))
+    //     //return Ok((StatusCode::OK, Json(json_response)));
+    //     return Ok(Html(templates.render("employee", &context).unwrap()));
+    // }
+
+    // let error_response = serde_json::json!({
+    //     "status": "fail",
+    //     "message": format!("Employee with ID: {} not found", id)
+    // });
+    // debug!("{error_response:?}");
+    // Err((StatusCode::NOT_FOUND, Json(error_response)))
 }
 
 pub async fn generate_handle_and_password(
     Path(id): Path<Uuid>,
     State(db): State<DB>,
-) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    let mut vec = db.lock().await;
+) -> impl IntoResponse {
+    let employees_list = list().await;
 
-    if let Some(employee) = vec.iter_mut().find(|employee| employee.id == Some(id)) {
-        let new_handle =
-            generate_handle(employee.first_name.clone(), employee.last_name.clone()).await;
+    match employees_list {
+        Ok(employees) => {
+            // list not onboarded employees
 
-        let payload = Employee {
-            id: employee.id,
-            first_name: employee.first_name.clone(),
-            last_name: employee.last_name.clone(),
-            email: Some(format!("{}@avaya.com", new_handle)),
-            age: employee.age,
-            diploma: employee.diploma.clone(),
-            onboarded: Some(true),
-            handle: Some(new_handle),
-            password: Some(generate_random_password().await),
-        };
-        *employee = payload;
+            // let filtered_employees: HashMap<Uuid, Employee> = employees
+            //     .into_iter()
+            //     .filter(|(_id, employee)| employee.id == Some(id))
+            //     .collect();
+            let filtered_employee = employees.get(&id).unwrap();
 
-        let json_response = SimpleEmployeeResponse {
-            status: "success".to_string(),
-            data: EmployeeData {
-                employee: employee.clone(),
-            },
-        };
-        Ok((StatusCode::OK, Json(json_response)))
-    } else {
-        let error_response = serde_json::json!({
-            "status": "fail",
-            "message": format!("Employee with ID: {} not found", id)
-        });
+            // let filtered_employee = employees
+            //     .into_iter()
+            //     .find(|employee| employee.id == Some(id))
+            //     .unwrap();
 
-        Err((StatusCode::NOT_FOUND, Json(error_response)))
+            let new_handle = generate_handle(
+                filtered_employee.first_name.clone(),
+                filtered_employee.last_name.clone(),
+            )
+            .await;
+
+            let employee = Employee {
+                id: filtered_employee.id,
+                first_name: filtered_employee.first_name.clone(),
+                last_name: filtered_employee.last_name.clone(),
+                email: Some(format!("{}@avaya.com", new_handle)),
+                age: filtered_employee.age,
+                diploma: filtered_employee.diploma.clone(),
+                onboarded: Some(true),
+                handle: Some(new_handle),
+                password: Some(generate_random_password().await),
+            };
+
+            let save_result = save(employee.clone()).await;
+            match save_result {
+                Ok(_) => {
+                    let json_response = SimpleEmployeeResponse {
+                        status: "success".to_string(),
+                        data: EmployeeData {
+                            employee: employee.clone(),
+                        },
+                    };
+                    debug!("{json_response:?}");
+                    Ok((StatusCode::OK, Json(json_response)))
+                }
+                Err(error) => {
+                    debug!("{error:?}");
+                    let json_response = SimpleEmployeeResponse {
+                        status: "error".to_string(),
+                        data: EmployeeData { employee },
+                    };
+                    Ok((StatusCode::NOT_MODIFIED, Json(json_response)))
+                }
+            }
+        }
+        Err(error) => {
+            debug!("{error:?}");
+            let error_response = EmployeeErrorResponse {
+                status: "error".to_string(),
+                description: error.to_string(),
+            };
+            Err((StatusCode::NOT_MODIFIED, Json(error_response)))
+        }
     }
+
+    // let mut vec = db.lock().await;
+
+    // if let Some(employee) = vec.iter_mut().find(|employee| employee.id == Some(id)) {
+    //     let new_handle =
+    //         generate_handle(employee.first_name.clone(), employee.last_name.clone()).await;
+
+    //     let payload = Employee {
+    //         id: employee.id,
+    //         first_name: employee.first_name.clone(),
+    //         last_name: employee.last_name.clone(),
+    //         email: Some(format!("{}@avaya.com", new_handle)),
+    //         age: employee.age,
+    //         diploma: employee.diploma.clone(),
+    //         onboarded: Some(true),
+    //         handle: Some(new_handle),
+    //         password: Some(generate_random_password().await),
+    //     };
+    //     *employee = payload;
+
+    //     let json_response = SimpleEmployeeResponse {
+    //         status: "success".to_string(),
+    //         data: EmployeeData {
+    //             employee: employee.clone(),
+    //         },
+    //     };
+    //     Ok((StatusCode::OK, Json(json_response)))
+    // } else {
+    //     let error_response = serde_json::json!({
+    //         "status": "fail",
+    //         "message": format!("Employee with ID: {} not found", id)
+    //     });
+
+    //     Err((StatusCode::NOT_FOUND, Json(error_response)))
+    // }
 }
 
 pub async fn index(Extension(templates): Extension<Templates>) -> impl IntoResponse {

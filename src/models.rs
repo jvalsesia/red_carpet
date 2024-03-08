@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
@@ -40,7 +40,7 @@ pub struct SimpleEmployeeResponse {
 pub struct EmployeeListResponse {
     pub status: String,
     pub results: usize,
-    pub employees: Vec<Employee>,
+    pub employees: HashMap<Uuid, Employee>,
 }
 
 #[allow(non_snake_case)]
