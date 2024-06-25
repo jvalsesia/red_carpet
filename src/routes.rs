@@ -4,7 +4,8 @@ use axum::{
     routing::{get, post},
     Extension, Router,
 };
-use tera::Tera;
+use tera::{Context, Tera};
+
 
 use crate::{
     handlers::{
@@ -16,13 +17,16 @@ use crate::{
 
 pub async fn define_routes() -> Router {
     let db = models::employee_db();
+   
 
     let mut tera = Tera::default();
+
     tera.add_raw_templates(vec![
-        ("index", include_str!("./templates/index.html")),
-        ("base.html", include_str!("./templates/base.html")),
-        ("employees", include_str!("./templates/employees.html")),
-        ("employee", include_str!("./templates/employee.html")),
+        ("layout.html", include_str!("./templates/layout.html")),
+        ("index.html", include_str!("./templates/index.html")),
+      
+        ("employees.html", include_str!("./templates/employees.html")),
+        // ("employee", include_str!("./templates/employee.html")),
     ])
     .unwrap();
     // build our application with a route

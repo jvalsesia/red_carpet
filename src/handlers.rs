@@ -342,7 +342,34 @@ pub async fn generate_handle_and_password(
 }
 
 pub async fn index(Extension(templates): Extension<Templates>) -> impl IntoResponse {
-    Html(templates.render("index", &Context::new()).unwrap())
+    let mut context = Context::new();
+    context.insert("title", "Red Carpet");
+
+
+    let employees_map = list().await;
+    match employees_map {
+        Ok(employees) => {
+
+            let employees_list: Vec<Employee> = employees.into_values().collect();
+           
+            debug!("{employees_list:?}");
+      
+            context.insert("employees", &employees_list);
+
+            Html(templates.render("employees.html", &context).unwrap())
+        }
+        Err(error) => {
+            debug!("{error:?}");
+            let error_response = EmployeeErrorResponse {
+                status: "error".to_string(),
+                description: error.to_string(),
+            };
+         
+            context.insert("error", &error_response);
+            Html(templates.render("index.html", &context).unwrap())
+        }
+    }
+
 }
 
 pub async fn styles() -> impl IntoResponse {
