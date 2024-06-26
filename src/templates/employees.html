@@ -1,9 +1,38 @@
-{% extends "layout.html" %}
-{% block title %}Employees:{% endblock title %}
+{% extends "base.html" %}
+{% block title %}{{title}}{% endblock title %}
+
 {% block content %}
-<ul>
-    {% for employee in employees %}
-    <li><a href="/employee/{{ employee.id }}">{{ employee.first_name}}</a></li>
-    {% endfor %}
-</ul>
+<h1>{{title}}</h1>
+{% if employees %}
+<table class="u-full-width">
+    <thead>
+        <tr>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Email</th>
+            <th>Age</th>
+            <th>Diploma</th>
+            <th>Handle</th>
+            <th></th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for employee in employees %}
+        <tr>
+            <td>{{employee.first_name}}</td>
+            <td>{{employee.last_name}}</td>
+            <td>{{employee.email}}</td>
+            <td>{{employee.age}}</td>
+            <td>{{employee.diploma}}</td>
+            <td><a href="/employee/{{ employee.id }}">{{ employee.id}}</a></td>
+            <td><a href="/employee/{{ employee.id }}"> Edit </a></td>
+            <td><a href="/employee/{{ employee.id }}"> Delete </a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+<a href="/employees/">Create new Dino</a>
 {% endblock content %}

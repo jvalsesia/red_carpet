@@ -6,7 +6,6 @@ use axum::{
 };
 use tera::{Context, Tera};
 
-
 use crate::{
     handlers::{
         create_employee, employees_list, generate_handle_and_password, get_employee,
@@ -17,14 +16,12 @@ use crate::{
 
 pub async fn define_routes() -> Router {
     let db = models::employee_db();
-   
 
     let mut tera = Tera::default();
 
     tera.add_raw_templates(vec![
-        ("layout.html", include_str!("./templates/layout.html")),
+        ("base.html", include_str!("./templates/base.html")),
         ("index.html", include_str!("./templates/index.html")),
-      
         ("employees.html", include_str!("./templates/employees.html")),
         // ("employee", include_str!("./templates/employee.html")),
     ])
