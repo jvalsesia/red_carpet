@@ -1,9 +1,11 @@
+use database::employee_db;
 use log::info;
 use tera::Tera;
 use tokio::net::TcpListener;
 
 use crate::{persistence::create_persistence_store, routes::define_routes};
 
+pub mod database;
 pub mod errors;
 pub mod handlers;
 pub mod models;
@@ -18,7 +20,7 @@ async fn main() {
 
     let _ = create_persistence_store();
 
-    let db = models::employee_db();
+    let db = employee_db();
 
     let tera = Tera::default();
 

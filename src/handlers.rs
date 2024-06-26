@@ -11,12 +11,13 @@ use tera::{Context, Tera};
 use uuid::Uuid;
 
 use crate::{
+    database::DB,
     errors::{
         employee_already_exists_error, employee_no_diploma_error, employee_not_old_enough_error,
     },
     models::{
         Employee, EmployeeData, EmployeeErrorResponse, EmployeeListResponse, EmployeeRequestBody,
-        QueryOptions, SimpleEmployeeResponse, DB,
+        QueryOptions, SimpleEmployeeResponse,
     },
     persistence::{delete, list, save},
     utils::{generate_handle, generate_random_password},

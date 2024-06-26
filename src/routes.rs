@@ -7,11 +7,11 @@ use axum::{
 use tera::Tera;
 
 use crate::{
+    database::DB,
     handlers::{
         create_employee, delete_employee, edit_employee, employees_list,
         generate_handle_and_password, get_employee, health_checker, index, list_employees, styles,
     },
-    models::DB,
 };
 
 pub async fn define_routes(db: DB, mut tera: Tera) -> Router {

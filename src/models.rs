@@ -1,7 +1,6 @@
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
-use tokio::sync::Mutex;
 use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -61,10 +60,4 @@ pub struct QueryOptions {
 pub struct EmployeeErrorResponse {
     pub status: String,
     pub description: String,
-}
-
-pub type DB = Arc<Mutex<Vec<Employee>>>;
-
-pub fn employee_db() -> DB {
-    Arc::new(Mutex::new(Vec::new()))
 }
