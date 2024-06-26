@@ -50,6 +50,29 @@ pub async fn save(employee: Employee) -> Result<String> {
     Ok(json)
 }
 
+pub async fn delete(id: Uuid) -> Result<HashMap<Uuid, Employee>> {
+    let employee_file_path = Path::new(DATA_FILE);
+    let data = fs::read_to_string(employee_file_path).expect("Unable to read file");
+    let mut map_employees: HashMap<Uuid, Employee> = HashMap::new();
+
+    //let mut employees: Vec<Employee> = Vec::new();
+    if fs::metadata(employee_file_path).unwrap().len() != 0 {
+        //  employees = serde_json::from_str(&data)?;
+        map_employees = serde_json::from_str(&data)?;
+    }
+
+    let removed_employee = map_employees.get(&id);
+    debug!("removing employee: {removed_employee:?}");
+    map_employees.remove(&id);
+
+    // employees.push(employee.clone());
+
+    let json: String = serde_json::to_string_pretty(&map_employees)?;
+    fs::write(employee_file_path, &json).expect("Unable to write file");
+
+    Ok(map_employees)
+}
+
 pub async fn list() -> Result<HashMap<Uuid, Employee>> {
     let employee_file_path = Path::new(DATA_FILE);
 
@@ -65,7 +88,6 @@ pub async fn list() -> Result<HashMap<Uuid, Employee>> {
 
     let json: String = serde_json::to_string_pretty(&map_employees)?;
     fs::write(employee_file_path, &json).expect("Unable to write file");
-    println!("----------- end load -----------");
 
     Ok(map_employees)
 }

@@ -1,4 +1,5 @@
 use log::info;
+use tera::Tera;
 use tokio::net::TcpListener;
 
 use crate::{persistence::create_persistence_store, routes::define_routes};
@@ -17,7 +18,11 @@ async fn main() {
 
     let _ = create_persistence_store();
 
-    let app = define_routes();
+    let db = models::employee_db();
+
+    let tera = Tera::default();
+
+    let app = define_routes(db, tera);
 
     // `axum::Server` is a re-export of `hyper::Server`
     let listener = TcpListener::bind("0.0.0.0:8080").await.unwrap();

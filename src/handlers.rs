@@ -18,7 +18,7 @@ use crate::{
         Employee, EmployeeData, EmployeeErrorResponse, EmployeeListResponse, EmployeeRequestBody,
         QueryOptions, SimpleEmployeeResponse, DB,
     },
-    persistence::{list, save},
+    persistence::{delete, list, save},
     utils::{generate_handle, generate_random_password},
 };
 
@@ -343,13 +343,20 @@ pub async fn generate_handle_and_password(
 
 pub async fn index(Extension(templates): Extension<Templates>) -> impl IntoResponse {
     let mut context = Context::new();
+    context.insert("title", "Welcome to Avaya Red Carpet");
+
+    Html(templates.render("index.html", &context).unwrap())
+}
+
+pub async fn list_employees(Extension(templates): Extension<Templates>) -> impl IntoResponse {
+    let mut context = Context::new();
     context.insert("title", "List Employees");
 
     let employees_map = list().await;
     match employees_map {
         Ok(employees) => {
-            let employees_list: Vec<Employee> = employees.into_values().collect();
-
+            let mut employees_list: Vec<Employee> = employees.into_values().collect();
+            employees_list.sort_by(|x, y| x.first_name.cmp(&y.first_name));
             debug!("{employees_list:?}");
 
             context.insert("employees", &employees_list);
@@ -369,6 +376,73 @@ pub async fn index(Extension(templates): Extension<Templates>) -> impl IntoRespo
     }
 }
 
+pub async fn edit_employee(
+    Path(id): Path<Uuid>,
+    Extension(templates): Extension<Templates>,
+) -> impl IntoResponse {
+    let mut context = Context::new();
+    context.insert("title", "Edit Employee");
+
+    let employees_list = list().await;
+
+    match employees_list {
+        Ok(employees) => {
+            // list not onboarded employees
+            let filtered_employees: HashMap<Uuid, Employee> = employees
+                .into_iter()
+                .filter(|(_id, employee)| employee.id == Some(id))
+                .collect();
+
+            let employees_list: Vec<Employee> = filtered_employees.into_values().collect();
+
+            let employee = employees_list.first().unwrap();
+            debug!("{employee:?}");
+
+            context.insert("employee", &employee);
+
+            Html(templates.render("edit_form.html", &context).unwrap())
+        }
+        Err(error) => {
+            debug!("{error:?}");
+            let error_response = EmployeeErrorResponse {
+                status: "error".to_string(),
+                description: error.to_string(),
+            };
+
+            context.insert("error", &error_response);
+            Html(templates.render("index.html", &context).unwrap())
+        }
+    }
+}
+pub async fn delete_employee(
+    Path(id): Path<Uuid>,
+    Extension(templates): Extension<Templates>,
+) -> impl IntoResponse {
+    let mut context = Context::new();
+    context.insert("title", "Edit Employee");
+
+    let employees_list = delete(id).await;
+
+    match employees_list {
+        Ok(employees) => {
+            let mut employees_list: Vec<Employee> = employees.into_values().collect();
+            employees_list.sort_by(|x, y| x.first_name.cmp(&y.first_name));
+            context.insert("employees", &employees_list);
+
+            Html(templates.render("employees.html", &context).unwrap())
+        }
+        Err(error) => {
+            debug!("{error:?}");
+            let error_response = EmployeeErrorResponse {
+                status: "error".to_string(),
+                description: error.to_string(),
+            };
+
+            context.insert("error", &error_response);
+            Html(templates.render("index.html", &context).unwrap())
+        }
+    }
+}
 pub async fn styles() -> impl IntoResponse {
     Response::builder()
         .status(http::StatusCode::OK)

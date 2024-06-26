@@ -4,28 +4,25 @@ use axum::{
     routing::{get, post},
     Extension, Router,
 };
-use tera::{Context, Tera};
+use tera::Tera;
 
 use crate::{
     handlers::{
-        create_employee, employees_list, generate_handle_and_password, get_employee,
-        health_checker, index, styles,
+        create_employee, delete_employee, edit_employee, employees_list,
+        generate_handle_and_password, get_employee, health_checker, index, list_employees, styles,
     },
-    models,
+    models::DB,
 };
 
-pub async fn define_routes() -> Router {
-    let db = models::employee_db();
-
-    let mut tera = Tera::default();
-
+pub async fn define_routes(db: DB, mut tera: Tera) -> Router {
     tera.add_raw_templates(vec![
         ("base.html", include_str!("./templates/base.html")),
         ("index.html", include_str!("./templates/index.html")),
         ("employees.html", include_str!("./templates/employees.html")),
-        // ("employee", include_str!("./templates/employee.html")),
+        ("edit_form.html", include_str!("./templates/edit_form.html")),
     ])
     .unwrap();
+
     // build our application with a route
     Router::new()
         .route("/api/v1/healthchecker", get(health_checker))
@@ -39,8 +36,9 @@ pub async fn define_routes() -> Router {
         )
         .route("/", get(index))
         .route("/styles.css", get(styles))
-        .route("/employees", get(employees_list))
-        .route("/employee/:id", get(get_employee))
+        .route("/employees", get(list_employees))
+        .route("/employee/:id", get(edit_employee))
+        .route("/delete/employee/:id", get(delete_employee))
         .layer(Extension(Arc::new(tera)))
         .with_state(db)
 }

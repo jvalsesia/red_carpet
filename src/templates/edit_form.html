@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>{{title}}</h1>
+<form>
+    <input id="id" name="id" type="hidden" value="{% if employee %} employee.id {% endif %}">
+    <div class="row">
+        <div class="ten columns">
+            <label for="first_name">First Name</label>
+            <input class="u-full-width" id="first_name" name="first_name" type="text" placeholder=""
+                value="{% if employee %} {{employee.first_name}} {% endif %}">
+        </div>
+    </div>
+    <div class="row">
+        <div class="ten columns">
+            <label for="last_name">Last Name</label>
+            <input class="u-full-width" name="last_name" id="last_name" type="text" placeholder=""
+                value="{% if employee %} {{employee.last_name}} {% endif %}">
+        </div>
+    </div>
+    <div class="row">
+        <div class="ten columns">
+            <label for="email">Email</label>
+            <input class="u-full-width" name="email" id="email" type="text" placeholder=""
+                value="{% if employee %} {{employee.email}} {% endif %}">
+        </div>
+    </div>
+
+    <input class="button-primary" type="submit" value="Submit"> <a class="button" href="/employees">Cancel</a>
+</form>
+{% endblock %}
