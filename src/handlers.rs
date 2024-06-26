@@ -352,7 +352,7 @@ pub async fn index(Extension(templates): Extension<Templates>) -> impl IntoRespo
 pub async fn list_employees(Extension(templates): Extension<Templates>) -> impl IntoResponse {
     let mut context = Context::new();
     context.insert("title", "List Employees");
-
+    context.insert("selected_id", "");
     let employees_map = list().await;
     match employees_map {
         Ok(employees) => {
@@ -415,13 +415,14 @@ pub async fn edit_employee(
         }
     }
 }
+
 pub async fn delete_employee(
     Path(id): Path<Uuid>,
     Extension(templates): Extension<Templates>,
 ) -> impl IntoResponse {
     let mut context = Context::new();
     context.insert("title", "Edit Employee");
-
+    context.insert("selected_id", &id);
     let employees_list = delete(id).await;
 
     match employees_list {
@@ -444,10 +445,13 @@ pub async fn delete_employee(
         }
     }
 }
-pub async fn styles() -> impl IntoResponse {
-    Response::builder()
-        .status(http::StatusCode::OK)
-        .header("Content-Type", "text/css")
-        .body(include_str!("./public/styles.css").to_owned())
-        .unwrap()
+
+pub async fn select_employee(
+    Path(id): Path<Uuid>,
+    Extension(templates): Extension<Templates>,
+) -> impl IntoResponse {
+    let mut context = Context::new();
+    context.insert("selected_id", &id);
+
+    Html(templates.render("employees.html", &context).unwrap())
 }
