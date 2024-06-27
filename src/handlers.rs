@@ -1,10 +1,10 @@
-use std::{collections::HashMap, fs, path, sync::Arc};
+use std::{collections::HashMap, f32::consts::E, fs, path, sync::Arc};
 
 use axum::{
     extract::{Path, Query, State},
     http::{self, Response, StatusCode},
     response::{ErrorResponse, Html, IntoResponse},
-    Extension, Json,
+    Extension, Form, Json,
 };
 use log::{debug, info};
 use tera::{Context, Tera};
@@ -19,7 +19,7 @@ use crate::{
         Employee, EmployeeData, EmployeeErrorResponse, EmployeeListResponse, EmployeeRequestBody,
         QueryOptions, SimpleEmployeeResponse,
     },
-    persistence::{delete, list, save},
+    persistence::{delete, list, save, update},
     utils::{generate_handle, generate_random_password},
 };
 
@@ -339,6 +339,54 @@ pub async fn select_employee(
             context.insert("employee", &employee);
 
             Html(templates.render("employee.html", &context).unwrap())
+        }
+        Err(error) => {
+            debug!("{error:?}");
+            let error_response = EmployeeErrorResponse {
+                status: "error".to_string(),
+                description: error.to_string(),
+            };
+
+            context.insert("error", &error_response);
+            Html(templates.render("index.html", &context).unwrap())
+        }
+    }
+}
+
+pub async fn handle_edit_form_data(
+    Extension(templates): Extension<Templates>,
+    Form(modified_employee_data): Form<Employee>,
+) -> impl IntoResponse {
+    let mut context = Context::new();
+    context.insert("title", "Edit Employee");
+    debug!(
+        "modified_employee_data.id ---> {:?}",
+        modified_employee_data.id
+    );
+    let modified_employee = Employee {
+        id: modified_employee_data.id,
+        first_name: modified_employee_data.first_name.clone(),
+        last_name: modified_employee_data.last_name.clone(),
+        email: modified_employee_data.email.clone(),
+        age: modified_employee_data.age,
+        diploma: modified_employee_data.diploma.clone(),
+        onboarded: modified_employee_data.onboarded,
+        handle: modified_employee_data.handle.clone(),
+        password: modified_employee_data.password.clone(),
+    };
+
+    debug!("modified_employee ---> {modified_employee:?}");
+    let employees_map = update(modified_employee).await;
+
+    match employees_map {
+        Ok(employees) => {
+            let mut employees_list: Vec<Employee> = employees.into_values().collect();
+            employees_list.sort_by(|x, y| x.first_name.cmp(&y.first_name));
+            debug!("{employees_list:?}");
+
+            context.insert("employees", &employees_list);
+
+            Html(templates.render("employees.html", &context).unwrap())
         }
         Err(error) => {
             debug!("{error:?}");

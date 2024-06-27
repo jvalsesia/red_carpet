@@ -2,8 +2,9 @@
 
 {% block content %}
 <h1>{{title}}</h1>
-<form method="POST" action="/submit">
-    <input id=" id" name="id" type="hidden" value="{% if employee %} employee.id {% endif %}">
+<form method="POST" enctype="application/x-www-form-urlencoded" action="/update/employee">
+    <input id="id" name="id" type="hidden" value="{% if employee %} urn:uuid:{{employee.id}} {% endif %}">
+
     <div class="row">
         <div class="ten columns">
             <label for="first_name">First Name</label>
@@ -21,12 +22,51 @@
     <div class="row">
         <div class="ten columns">
             <label for="email">Email</label>
-            <input class="u-full-width" name="email" id="email" type="text" placeholder=""
+            <input class="u-full-width" name="email" id="email" type="email" placeholder=""
                 value="{% if employee %} {{employee.email}} {% endif %}">
         </div>
     </div>
+    <div class="row">
+        <div class="ten columns">
+            <label for="age">Age</label>
+            <input class="u-full-width" name="age" id="age" type="number" placeholder=""
+                value="{% if employee %} {{employee.age}} {% endif %}">
+        </div>
+    </div>
 
-    <button onclick="window.location.href='/edit/employee/{{ employee }}'" class="btn btn-warning">
+    <div class="row">
+        <div class="ten columns">
+            <label for="diploma">Diploma</label>
+            <input class="u-full-width" name="diploma" id="diploma" type="text" placeholder=""
+                value="{% if employee %} {{employee.diploma}} {% endif %}">
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="ten columns">
+            <label for="onboarded">Onboarded</label>
+            <input class="u-full-width" name="onboarded" id="onboarded" type="text" placeholder=""
+                value="{% if employee %} {{employee.onboarded}} {% endif %}">
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="ten columns">
+            <label for="handle">handle</label>
+            <input class="u-full-width" name="handle" id="handle" type="text" placeholder=""
+                value="{% if employee %} {{employee.handle}} {% endif %}">
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="ten columns">
+            <label for="password">Password</label>
+            <input class="u-full-width" name="password" id="password" type="password" placeholder=""
+                value="{% if employee %} {{employee.password}} {% endif %}">
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-warning">
         Edit
     </button>
 </form>

@@ -10,8 +10,8 @@ use crate::{
     database::DB,
     handlers::{
         create_employee, delete_employee, edit_employee, employees_list,
-        generate_handle_and_password, get_employee, health_checker, index, list_employees,
-        select_employee,
+        generate_handle_and_password, get_employee, handle_edit_form_data, health_checker, index,
+        list_employees, select_employee,
     },
 };
 
@@ -43,6 +43,7 @@ pub async fn define_routes(db: DB, mut tera: Tera) -> Router {
         .route("/", get(index))
         .route("/list/employees", get(list_employees))
         .route("/edit/employee/:id", get(edit_employee))
+        .route("/update/employee", post(handle_edit_form_data))
         .route("/delete/employee/:id", get(delete_employee))
         .route("/select/employee/:id", get(select_employee))
         .layer(Extension(Arc::new(tera)))
