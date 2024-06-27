@@ -41,7 +41,7 @@ pub async fn create_employee(
     Json(mut body): Json<EmployeeRequestBody>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let employee = Employee {
-        id: Some(Uuid::new_v4()),
+        id: Some(Uuid::new_v4().to_string()),
         first_name: body.first_name,
         last_name: body.last_name,
         email: None,
@@ -86,7 +86,7 @@ pub async fn employees_list(
 
     match employees_list {
         Ok(employees) => {
-            let filtered_employees: HashMap<Uuid, Employee> = employees
+            let filtered_employees: HashMap<String, Employee> = employees
                 .into_iter()
                 .skip(offset)
                 .take(limit)
@@ -113,7 +113,7 @@ pub async fn employees_list(
 }
 
 pub async fn get_employee(
-    Path(id): Path<Uuid>,
+    Path(id): Path<String>,
     Extension(templates): Extension<Templates>,
     State(db): State<DB>,
 ) -> impl IntoResponse {
@@ -124,9 +124,9 @@ pub async fn get_employee(
     match employees_list {
         Ok(employees) => {
             // list not onboarded employees
-            let filtered_employees: HashMap<Uuid, Employee> = employees
+            let filtered_employees: HashMap<String, Employee> = employees
                 .into_iter()
-                .filter(|(_id, employee)| employee.id == Some(id))
+                .filter(|(_id, employee)| employee.id == Some(id.clone()))
                 .collect();
 
             let json_response = EmployeeListResponse {
@@ -149,7 +149,7 @@ pub async fn get_employee(
 }
 
 pub async fn generate_handle_and_password(
-    Path(id): Path<Uuid>,
+    Path(id): Path<String>,
     State(db): State<DB>,
 ) -> impl IntoResponse {
     let employees_list = list().await;
@@ -167,7 +167,7 @@ pub async fn generate_handle_and_password(
             .await;
 
             let employee = Employee {
-                id: filtered_employee.id,
+                id: filtered_employee.id.clone(),
                 first_name: filtered_employee.first_name.clone(),
                 last_name: filtered_employee.last_name.clone(),
                 email: Some(format!("{}@avaya.com", new_handle)),
@@ -247,7 +247,7 @@ pub async fn list_employees(Extension(templates): Extension<Templates>) -> impl 
 }
 
 pub async fn edit_employee(
-    Path(id): Path<Uuid>,
+    Path(id): Path<String>,
     Extension(templates): Extension<Templates>,
 ) -> impl IntoResponse {
     let mut context = Context::new();
@@ -258,9 +258,9 @@ pub async fn edit_employee(
     match employees_list {
         Ok(employees) => {
             // list not onboarded employees
-            let filtered_employees: HashMap<Uuid, Employee> = employees
+            let filtered_employees: HashMap<String, Employee> = employees
                 .into_iter()
-                .filter(|(_id, employee)| employee.id == Some(id))
+                .filter(|(_id, employee)| employee.id == Some(id.clone()))
                 .collect();
 
             let employees_list: Vec<Employee> = filtered_employees.into_values().collect();
@@ -286,7 +286,7 @@ pub async fn edit_employee(
 }
 
 pub async fn delete_employee(
-    Path(id): Path<Uuid>,
+    Path(id): Path<String>,
     Extension(templates): Extension<Templates>,
 ) -> impl IntoResponse {
     let mut context = Context::new();
@@ -316,7 +316,7 @@ pub async fn delete_employee(
 }
 
 pub async fn select_employee(
-    Path(id): Path<Uuid>,
+    Path(id): Path<String>,
     Extension(templates): Extension<Templates>,
 ) -> impl IntoResponse {
     let mut context = Context::new();
@@ -327,9 +327,9 @@ pub async fn select_employee(
     match employees_list {
         Ok(employees) => {
             // list not onboarded employees
-            let filtered_employees: HashMap<Uuid, Employee> = employees
+            let filtered_employees: HashMap<String, Employee> = employees
                 .into_iter()
-                .filter(|(_id, employee)| employee.id == Some(id))
+                .filter(|(_id, employee)| employee.id == Some(id.clone()))
                 .collect();
 
             let employees_list: Vec<Employee> = filtered_employees.into_values().collect();

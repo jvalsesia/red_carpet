@@ -1,5 +1,4 @@
 use log::{debug, info};
-use uuid::Uuid;
 
 use crate::models::Employee;
 use std::{
@@ -33,14 +32,14 @@ pub fn create_persistence_store() -> Result<()> {
 pub async fn save(employee: Employee) -> Result<String> {
     let employee_file_path = Path::new(DATA_FILE);
     let data = fs::read_to_string(employee_file_path).expect("Unable to read file");
-    let mut map_employees: HashMap<Uuid, Employee> = HashMap::new();
+    let mut map_employees: HashMap<String, Employee> = HashMap::new();
 
     //let mut employees: Vec<Employee> = Vec::new();
     if fs::metadata(employee_file_path).unwrap().len() != 0 {
         //  employees = serde_json::from_str(&data)?;
         map_employees = serde_json::from_str(&data)?;
     }
-    map_employees.insert(employee.id.unwrap(), employee.clone());
+    map_employees.insert(employee.id.clone().unwrap(), employee.clone());
     // employees.push(employee.clone());
 
     let json: String = serde_json::to_string_pretty(&map_employees)?;
@@ -50,10 +49,10 @@ pub async fn save(employee: Employee) -> Result<String> {
     Ok(json)
 }
 
-pub async fn update(modified_employee: Employee) -> Result<HashMap<Uuid, Employee>> {
+pub async fn update(modified_employee: Employee) -> Result<HashMap<String, Employee>> {
     let employee_file_path = Path::new(DATA_FILE);
     let data = fs::read_to_string(employee_file_path).expect("Unable to read file");
-    let mut map_employees: HashMap<Uuid, Employee> = HashMap::new();
+    let mut map_employees: HashMap<String, Employee> = HashMap::new();
     debug!("modified_employee: {modified_employee:?}");
     //let mut employees: Vec<Employee> = Vec::new();
     if fs::metadata(employee_file_path).unwrap().len() != 0 {
@@ -62,7 +61,7 @@ pub async fn update(modified_employee: Employee) -> Result<HashMap<Uuid, Employe
     }
 
     map_employees
-        .entry(modified_employee.id.unwrap())
+        .entry(modified_employee.id.clone().unwrap())
         .and_modify(|employee| *employee = modified_employee.clone())
         .or_insert(modified_employee.clone());
 
@@ -73,10 +72,10 @@ pub async fn update(modified_employee: Employee) -> Result<HashMap<Uuid, Employe
     Ok(map_employees)
 }
 
-pub async fn delete(id: Uuid) -> Result<HashMap<Uuid, Employee>> {
+pub async fn delete(id: String) -> Result<HashMap<String, Employee>> {
     let employee_file_path = Path::new(DATA_FILE);
     let data = fs::read_to_string(employee_file_path).expect("Unable to read file");
-    let mut map_employees: HashMap<Uuid, Employee> = HashMap::new();
+    let mut map_employees: HashMap<String, Employee> = HashMap::new();
 
     //let mut employees: Vec<Employee> = Vec::new();
     if fs::metadata(employee_file_path).unwrap().len() != 0 {
@@ -96,12 +95,12 @@ pub async fn delete(id: Uuid) -> Result<HashMap<Uuid, Employee>> {
     Ok(map_employees)
 }
 
-pub async fn list() -> Result<HashMap<Uuid, Employee>> {
+pub async fn list() -> Result<HashMap<String, Employee>> {
     let employee_file_path = Path::new(DATA_FILE);
 
     let data = fs::read_to_string(employee_file_path).expect("Unable to read file");
 
-    let mut map_employees: HashMap<Uuid, Employee> = HashMap::new();
+    let mut map_employees: HashMap<String, Employee> = HashMap::new();
 
     //let mut employees: Vec<Employee> = Vec::new();
     if fs::metadata(employee_file_path).unwrap().len() != 0 {

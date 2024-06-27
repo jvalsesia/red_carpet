@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Employee {
-    pub id: Option<Uuid>,
+    pub id: Option<String>,
     pub first_name: String,
     pub last_name: String,
     pub email: Option<String>,
@@ -39,7 +38,7 @@ pub struct SimpleEmployeeResponse {
 pub struct EmployeeListResponse {
     pub status: String,
     pub results: usize,
-    pub employees: HashMap<Uuid, Employee>,
+    pub employees: HashMap<String, Employee>,
 }
 
 #[allow(non_snake_case)]
