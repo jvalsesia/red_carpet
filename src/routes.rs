@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::{
-    routing::{get, post},
+    routing::{any, get, post},
     Extension, Router,
 };
 use tera::Tera;
@@ -11,7 +11,7 @@ use crate::{
     handlers::{
         create_employee, delete_employee, edit_employee, employees_list,
         generate_handle_and_password, get_employee, handle_edit_form_data, health_checker, index,
-        list_employees, select_employee,
+        list_employees, select_employee, styles,
     },
 };
 
@@ -40,6 +40,7 @@ pub async fn define_routes(db: DB, mut tera: Tera) -> Router {
             "/api/v1/employees/:id",
             get(get_employee).patch(generate_handle_and_password),
         )
+        .route("/styles.css", any(styles))
         .route("/", get(index))
         .route("/list/employees", get(list_employees))
         .route("/edit/employee/:id", get(edit_employee))

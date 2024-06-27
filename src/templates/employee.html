@@ -2,40 +2,147 @@
 {% block title %}{{first_name}}{% endblock title %}
 {% block content %}
 <h1>{{title}}</h1>
-<table>
-    <tr>
-        <th>First Name</th>
-        <td>{{ employee.first_name }}</td>
-    </tr>
-    <tr>
-        <th>Last Surname</th>
-        <td>{{ employee.last_name }}</td>
-    </tr>
-    <tr>
-        <th>email</th>
-        <td>{{ employee.email }}</td>
-    </tr>
-    <tr>
-        <th>Age</th>
-        <td>{{ employee.age }}</td>
-    </tr>
-    <tr>
-        <th>Diploma</th>
-        <td>{{ employee.diploma }}</td>
-    </tr>
-    <tr>
-        <th>Handle</th>
-        <td>{{ employee.handle }}</td>
-    </tr>
-</table>
-{% if is_self %}
-<button onclick="window.location.href=' /edit/employee/{{ employee.id }}'" class="btn btn-warning">
-    Edit
-</button>
-<button onclick="window.location.href=' /delete/employee/{{ employee.id }}'" class="btn btn-danger">
-    Delete
-</button>
 
 
-{% endif %}
+
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+
+
+
+                {% if employee %}
+                <form>
+                    <input id=" id" name="id" type="hidden" value="{{employee.id}}">
+
+
+                    <div class="form-floating">
+
+                        <input readonly class="form-control-plaintext" id="first_name" name="first_name" type="text"
+                            placeholder="" value="{{employee.first_name}}">
+                        <label for="first_name">First Name</label>
+                    </div>
+
+                    <br>
+
+
+                    <div class="form-floating">
+
+                        <input readonly class="form-control-plaintext" name="last_name" id="last_name" type="text"
+                            placeholder="" value="{{employee.last_name}}">
+                        <label for="last_name">Last Name</label>
+                    </div>
+                    <br>
+
+                    <div class="form-floating">
+
+                        <input readonly class="form-control-plaintext" name="email" id="email" type="email"
+                            placeholder="" value="{{employee.email}}">
+                        <label for="email">Email</label>
+                    </div>
+                    <br>
+
+                    <div class="form-floating">
+
+                        <input readonly class="form-control-plaintext" name="age" id="age" type="number" placeholder=""
+                            value="{{employee.age}}">
+                        <label for="age">Age</label>
+                    </div>
+                    <br>
+
+
+                    <div class="form-floating">
+
+                        <input readonly class="form-control-plaintext" name="diploma" id="diploma" type="text"
+                            placeholder="" value="{{employee.diploma}}">
+                        <label for="diploma">Diploma</label>
+                    </div>
+                    <br>
+
+
+                    <div class="form-floating">
+
+                        <input readonly class="form-control-plaintext" name="onboarded" id="onboarded" type="text"
+                            placeholder="" value="{{employee.onboarded}}">
+                        <label for="onboarded">Onboarded</label>
+                    </div>
+                    <br>
+
+
+                    <div class="form-floating">
+
+                        <input readonly class="form-control-plaintext" name="handle" id="handle" type="text"
+                            placeholder="" value="{{employee.handle}}">
+                        <label for="handle">handle</label>
+                    </div>
+                    <br>
+
+
+                    <div class="form-floating">
+                        <input readonly type="password" class="form-control-plaintext" name="password" id="password"
+                            placeholder="Password" value="{{employee.password}}">
+                        <label for="password">Password</label>
+                    </div>
+
+                    <br>
+
+
+
+
+
+                </form>
+
+                <!-- Modal -->
+                <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false"
+                    tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h1 class="modal-title fs-5" id="staticBackdropLabel">Delete Employee</h1>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                Are you sure you want to delete this employee?
+                                <br>
+                                {{ employee.first_name }} {{ employee.last_name }}
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button onclick="window.location.href='/delete/employee/{{ employee.id }}'"
+                                    class="btn btn-danger">Yes</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                {% if is_self %}
+
+                <button onclick="window.location.href='/list/employees'" class="btn btn-secondary">
+                    Cancel
+                </button>
+
+                <button onclick="window.location.href='/edit/employee/{{ employee.id }}'" class="btn btn-warning">
+                    Edit
+                </button>
+
+                <!-- Button trigger modal -->
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+                    Delete
+                </button>
+
+                {% endif %}
+                {% endif %}
+
+
+            </div>
+        </div>
+    </div>
+
+
+
+</body>
+
 {% endblock content %}

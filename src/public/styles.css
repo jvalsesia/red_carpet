@@ -1,3 +1,15 @@
 .table-responsive {
-    max-height: 300px;
+    max-height: 600px;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.red-background {
+    background-color: lightcoral;
+}
+
+.green-background {
+    background-color: lightgreen;
 }

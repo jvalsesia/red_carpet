@@ -17,27 +17,29 @@
                     <table class="table table-bordered table-hover">
                         <thead>
                             <tr>
-                                <th>First Name</th>
-                                <th>Last Name</th>
-                                <th>Email</th>
-                                <th>Age</th>
-                                <th>Diploma</th>
-                                <th>Handle</th>
-                                <th></th>
+                                <th class="text-center" scope="col">First Name</th>
+                                <th class="text-center" scope="col">Last Name</th>
+                                <th class="text-center" scope="col">Age</th>
+                                <th class="text-center" scope="col">Diploma</th>
+                                <th class="text-center" scope="col">Handle</th>
+                                <th class="text-center" scope="col">Email</th>
+                                <th class="text-center" scope="col">Onboarded</th>
+                                <th class="text-center" scope="col"></th>
 
                             </tr>
                         </thead>
                         <tbody>
                             {% for employee in employees %}
                             <tr>
-                                <td>{{employee.first_name}}</td>
-                                <td>{{employee.last_name}}</td>
-                                <td>{{employee.email}}</td>
-                                <td>{{employee.age}}</td>
-                                <td>{{employee.diploma}}</td>
-                                <td><a href="/employee/{{ employee.id }}">{{ employee.id}}</a></td>
-                                <td>
-                                    <button onclick="window.location.href=' /select/employee/{{ employee.id }}'"
+                                <td class="text-center">{{employee.first_name}}</td>
+                                <td class="text-center">{{employee.last_name}}</td>
+                                <td class="text-center">{{employee.age}}</td>
+                                <td class="text-center">{{employee.diploma}}</td>
+                                <td class="text-center">{{employee.handle}}</td>
+                                <td class="text-center">{{employee.email}}</td>
+                                <td class="text-center">{{employee.onboarded}}</td>
+                                <td class="text-center">
+                                    <button onclick="window.location.href='/select/employee/{{ employee.id }}'"
                                         class="btn btn-primary">
                                         View
                                     </button>

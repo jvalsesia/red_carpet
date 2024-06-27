@@ -10,9 +10,9 @@
 
                 <h1>{{title}}</h1>
                 {% if employee %}
-                <form method="POST" enctype="application/x-www-form-urlencoded" action="/update/employee">
+                <form id="update_form" method="POST" enctype="application/x-www-form-urlencoded"
+                    action="/update/employee">
                     <input id="id" name="id" type="hidden" value="{{employee.id}}">
-
 
                     <div class="form-floating">
 
@@ -20,9 +20,7 @@
                             value="{{employee.first_name}}">
                         <label for="first_name">First Name</label>
                     </div>
-
                     <br>
-
 
                     <div class="form-floating">
 
@@ -59,10 +57,6 @@
 
 
                     <div class="form-floating">
-
-                        <!-- <input class="form-control" name="onboarded" id="onboarded" type="text" placeholder=""
-                value="{{employee.onboarded}}"> -->
-
                         <select class="form-select" name="onboarded" id="onboarded" aria-label="Default select example">
                             {% if employee.onboarded %}
                             <option value="false">false</option>
@@ -71,16 +65,12 @@
                             <option selected value="false">false</option>
                             <option value="true">true</option>
                             {% endif %}
-
-
                         </select>
                         <label for="onboarded">Onboarded</label>
                     </div>
                     <br>
 
-
                     <div class="form-floating">
-
                         <input class="form-control" name="handle" id="handle" type="text" placeholder=""
                             value="{{employee.handle}}">
                         <label for="handle">handle</label>
@@ -94,11 +84,41 @@
                         <label for="password">Password</label>
                     </div>
                     <br>
-
-                    <button type="submit" class="btn btn-warning">
-                        Edit
-                    </button>
                 </form>
+
+
+
+                <!-- Modal -->
+                <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false"
+                    tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h1 class="modal-title fs-5" id="staticBackdropLabel">Edit Employee</h1>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                Are you sure you want to edit this employee?
+                                <br>
+                                {{ employee.first_name }} {{ employee.last_name }}
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="submit" form="update_form" class="btn btn-warning">Yes</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="window.location.href='/select/employee/{{ employee.id }}'" class="btn btn-secondary">
+                    Cancel
+                </button>
+                <!-- Button trigger modal -->
+                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+                    Edit
+                </button>
+
                 {% endif %}
             </div>
         </div>
