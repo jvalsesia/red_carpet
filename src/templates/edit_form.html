@@ -1,73 +1,111 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>{{title}}</h1>
-{% if employee %}
-<form method="POST" enctype="application/x-www-form-urlencoded" action="/update/employee">
-    <input id="id" name="id" type="hidden" value="{{employee.id}}">
 
-    <div class="row">
-        <div class="ten columns">
-            <label for="first_name">First Name</label>
-            <input class="u-full-width" id="first_name" name="first_name" type="text" placeholder=""
-                value="{{employee.first_name}}">
-        </div>
-    </div>
-    <div class="row">
-        <div class="ten columns">
-            <label for="last_name">Last Name</label>
-            <input class="u-full-width" name="last_name" id="last_name" type="text" placeholder=""
-                value="{{employee.last_name}}">
-        </div>
-    </div>
-    <div class="row">
-        <div class="ten columns">
-            <label for="email">Email</label>
-            <input class="u-full-width" name="email" id="email" type="email" placeholder="" value="{{employee.email}}">
-        </div>
-    </div>
-    <div class="row">
-        <div class="ten columns">
-            <label for="age">Age</label>
-            <input class="u-full-width" name="age" id="age" type="number" placeholder="" value="{{employee.age}}">
+
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+
+                <h1>{{title}}</h1>
+                {% if employee %}
+                <form method="POST" enctype="application/x-www-form-urlencoded" action="/update/employee">
+                    <input id="id" name="id" type="hidden" value="{{employee.id}}">
+
+
+                    <div class="form-floating">
+
+                        <input class="form-control" id="first_name" name="first_name" type="text" placeholder=""
+                            value="{{employee.first_name}}">
+                        <label for="first_name">First Name</label>
+                    </div>
+
+                    <br>
+
+
+                    <div class="form-floating">
+
+                        <input class="form-control" name="last_name" id="last_name" type="text" placeholder=""
+                            value="{{employee.last_name}}">
+                        <label for="last_name">Last Name</label>
+                    </div>
+                    <br>
+
+                    <div class="form-floating">
+
+                        <input class="form-control" name="email" id="email" type="email" placeholder=""
+                            value="{{employee.email}}">
+                        <label for="email">Email</label>
+                    </div>
+                    <br>
+
+                    <div class="form-floating">
+
+                        <input class="form-control" name="age" id="age" type="number" placeholder=""
+                            value="{{employee.age}}">
+                        <label for="age">Age</label>
+                    </div>
+                    <br>
+
+
+                    <div class="form-floating">
+
+                        <input class="form-control" name="diploma" id="diploma" type="text" placeholder=""
+                            value="{{employee.diploma}}">
+                        <label for="diploma">Diploma</label>
+                    </div>
+                    <br>
+
+
+                    <div class="form-floating">
+
+                        <!-- <input class="form-control" name="onboarded" id="onboarded" type="text" placeholder=""
+                value="{{employee.onboarded}}"> -->
+
+                        <select class="form-select" name="onboarded" id="onboarded" aria-label="Default select example">
+                            {% if employee.onboarded %}
+                            <option value="false">false</option>
+                            <option selected value="true">true</option>
+                            {% else %}
+                            <option selected value="false">false</option>
+                            <option value="true">true</option>
+                            {% endif %}
+
+
+                        </select>
+                        <label for="onboarded">Onboarded</label>
+                    </div>
+                    <br>
+
+
+                    <div class="form-floating">
+
+                        <input class="form-control" name="handle" id="handle" type="text" placeholder=""
+                            value="{{employee.handle}}">
+                        <label for="handle">handle</label>
+                    </div>
+                    <br>
+
+
+                    <div class="form-floating">
+                        <input type="password" class="form-control" name="password" id="password" placeholder="Password"
+                            value="{{employee.password}}">
+                        <label for="password">Password</label>
+                    </div>
+                    <br>
+
+                    <button type="submit" class="btn btn-warning">
+                        Edit
+                    </button>
+                </form>
+                {% endif %}
+            </div>
         </div>
     </div>
 
-    <div class="row">
-        <div class="ten columns">
-            <label for="diploma">Diploma</label>
-            <input class="u-full-width" name="diploma" id="diploma" type="text" placeholder=""
-                value="{{employee.diploma}}">
-        </div>
-    </div>
 
-    <div class="row">
-        <div class="ten columns">
-            <label for="onboarded">Onboarded</label>
-            <input class="u-full-width" name="onboarded" id="onboarded" type="text" placeholder=""
-                value="{{employee.onboarded}}">
-        </div>
-    </div>
+</body>
 
-    <div class="row">
-        <div class="ten columns">
-            <label for="handle">handle</label>
-            <input class="u-full-width" name="handle" id="handle" type="text" placeholder=""
-                value="{{employee.handle}}">
-        </div>
-    </div>
 
-    <div class="row">
-        <div class="ten columns">
-            <label for="password">Password</label>
-            <input class="u-full-width" name="password" id="password" type="password" placeholder=""
-                value="{{employee.password}}">
-        </div>
-    </div>
-
-    <button type="submit" class="btn btn-warning">
-        Edit
-    </button>
-</form>
-{% endif %}
 {% endblock %}
