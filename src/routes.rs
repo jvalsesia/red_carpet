@@ -19,8 +19,13 @@ pub async fn define_routes(db: DB, mut tera: Tera) -> Router {
     tera.add_raw_templates(vec![
         ("base.html", include_str!("./templates/base.html")),
         ("index.html", include_str!("./templates/index.html")),
+        ("employee.html", include_str!("./templates/employee.html")),
         ("employees.html", include_str!("./templates/employees.html")),
         ("edit_form.html", include_str!("./templates/edit_form.html")),
+        (
+            "delete_confirmation.html",
+            include_str!("./templates/delete_confirmation.html"),
+        ),
     ])
     .unwrap();
 
@@ -36,8 +41,8 @@ pub async fn define_routes(db: DB, mut tera: Tera) -> Router {
             get(get_employee).patch(generate_handle_and_password),
         )
         .route("/", get(index))
-        .route("/employees", get(list_employees))
-        .route("/employee/:id", get(edit_employee))
+        .route("/list/employees", get(list_employees))
+        .route("/edit/employee/:id", get(edit_employee))
         .route("/delete/employee/:id", get(delete_employee))
         .route("/select/employee/:id", get(select_employee))
         .layer(Extension(Arc::new(tera)))

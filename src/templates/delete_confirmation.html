@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{first_name}}{% endblock title %}
 {% block content %}
-<h1>{{title}}</h1>
+
 <table>
     <tr>
         <th>First Name</th>
@@ -29,13 +29,8 @@
     </tr>
 </table>
 {% if is_self %}
-<button onclick="window.location.href=' /edit/employee/{{ employee.id }}'" class="btn btn-warning">
-    Edit
-</button>
-<button onclick="window.location.href=' /delete/employee/{{ employee.id }}'" class="btn btn-danger">
-    Delete
-</button>
-
-
+<form method="post" action="/delete">
+    <input type="submit" value="Delete account">
+</form>
 {% endif %}
 {% endblock content %}

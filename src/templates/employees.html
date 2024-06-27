@@ -2,31 +2,11 @@
 {% block title %}{{title}}{% endblock title %}
 
 {% block content %}
+{% set_global current_id = "3" %}
+
 <h1>{{title}}</h1>
 {% if employees %}
 
-
-<!-- Modal -->
-<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
-    aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                {{selected_id}}
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary">Save changes</button>
-            </div>
-        </div>
-    </div>
-</div>
 
 
 <table class="u-full-width">
@@ -51,12 +31,11 @@
             <td>{{employee.age}}</td>
             <td>{{employee.diploma}}</td>
             <td><a href="/employee/{{ employee.id }}">{{ employee.id}}</a></td>
-            <td><button type="submit" formaction="/delete/employee/{{ employee.id }}" class="btn btn-primary"
-                    data-toggle="modal" data-target="#exampleModal">
-                    Delete
-                </button></td>
-            <td><a data-target="#exampleModal" data-toggle="modal" class="MainNavText" id="exampleModal"
-                    href="#exampleModal">HELP</a></td>
+            <td>
+                <button onclick="window.location.href=' /select/employee/{{ employee.id }}'" class="btn btn-primary">
+                    View
+                </button>
+            </td>
 
         </tr>
         {% endfor %}

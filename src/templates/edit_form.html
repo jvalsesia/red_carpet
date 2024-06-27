@@ -2,8 +2,8 @@
 
 {% block content %}
 <h1>{{title}}</h1>
-<form>
-    <input id="id" name="id" type="hidden" value="{% if employee %} employee.id {% endif %}">
+<form method="POST" action="/submit">
+    <input id=" id" name="id" type="hidden" value="{% if employee %} employee.id {% endif %}">
     <div class="row">
         <div class="ten columns">
             <label for="first_name">First Name</label>
@@ -26,6 +26,8 @@
         </div>
     </div>
 
-    <input class="button-primary" type="submit" value="Submit"> <a class="button" href="/employees">Cancel</a>
+    <button onclick="window.location.href='/edit/employee/{{ employee }}'" class="btn btn-warning">
+        Edit
+    </button>
 </form>
 {% endblock %}
