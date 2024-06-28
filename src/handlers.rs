@@ -34,6 +34,7 @@ pub async fn list_employees(Extension(templates): Extension<Templates>) -> impl 
     let mut context = Context::new();
     context.insert("title", "List Employees");
     context.insert("selected_id", "");
+
     let employees_map = list().await;
     match employees_map {
         Ok(employees) => {
@@ -65,9 +66,9 @@ pub async fn edit_employee(
     let mut context = Context::new();
     context.insert("title", "Employee");
 
-    let employees_list = list().await;
+    let employees_map = list().await;
 
-    match employees_list {
+    match employees_map {
         Ok(employees) => {
             // list not onboarded employees
             let filtered_employees: HashMap<String, Employee> = employees
@@ -104,9 +105,9 @@ pub async fn delete_employee(
     let mut context = Context::new();
     context.insert("title", "Edit Employee");
 
-    let employees_list = delete(id).await;
+    let employees_map = delete(id).await;
 
-    match employees_list {
+    match employees_map {
         Ok(employees) => {
             let mut employees_list: Vec<Employee> = employees.into_values().collect();
             employees_list.sort_by(|x, y| x.first_name.cmp(&y.first_name));
@@ -133,9 +134,9 @@ pub async fn select_employee(
 ) -> impl IntoResponse {
     let mut context = Context::new();
     context.insert("title", "Employee");
-    let employees_list = list().await;
 
-    match employees_list {
+    let employees_map = list().await;
+    match employees_map {
         Ok(employees) => {
             // list not onboarded employees
             let filtered_employees: HashMap<String, Employee> = employees
