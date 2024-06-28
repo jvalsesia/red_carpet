@@ -8,6 +8,7 @@ use axum::{
 };
 use log::debug;
 use tera::{Context, Tera};
+use uuid::Uuid;
 
 use crate::{
     models::{Employee, EmployeeErrorResponse},
@@ -35,6 +36,13 @@ pub async fn new_employee_page(Extension(templates): Extension<Templates>) -> im
     context.insert("title", "Personal Details");
 
     Html(templates.render("new_employee.html", &context).unwrap())
+}
+
+pub async fn save_success_page(Extension(templates): Extension<Templates>) -> impl IntoResponse {
+    let mut context = Context::new();
+    context.insert("title", "Personal Details");
+
+    Html(templates.render("save_success.html", &context).unwrap())
 }
 
 pub async fn list_employees(Extension(templates): Extension<Templates>) -> impl IntoResponse {
@@ -226,27 +234,28 @@ pub async fn handle_save_form_data(
 ) -> impl IntoResponse {
     let mut context = Context::new();
     context.insert("title", "Edit Employee");
-    debug!("new_employee_data.id ---> {:?}", new_employee_data.id);
+    let id = Some(Uuid::new_v4().to_string());
+    debug!("new_employee_data.id ---> {:?}", id);
     let new_employee = Employee {
-        id: new_employee_data.id,
+        id,
         first_name: new_employee_data.first_name.clone(),
         last_name: new_employee_data.last_name.clone(),
         email: new_employee_data.email.clone(),
         age: new_employee_data.age,
         diploma: new_employee_data.diploma.clone(),
-        onboarded: new_employee_data.onboarded,
-        handle: new_employee_data.handle.clone(),
-        password: new_employee_data.password.clone(),
+        onboarded: Some(false),
+        handle: None,
+        password: None,
     };
 
     debug!("new_employee ---> {new_employee:?}");
-    let save_result = save(new_employee).await;
+    let save_result = save(new_employee.clone()).await;
 
     match save_result {
         Ok(employee) => {
-            context.insert("employee", &employee);
+            context.insert("employee", &new_employee);
 
-            Html(templates.render("new_emplolyee.html", &context).unwrap())
+            Html(templates.render("save_success.html", &context).unwrap())
         }
         Err(error) => {
             debug!("{error:?}");
