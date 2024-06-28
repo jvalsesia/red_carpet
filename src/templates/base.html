@@ -5,9 +5,11 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Title</title>
+    <title>Red Carpet</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon"
+        href="https://img03.en25.com/EloquaImages/clients/AvayaInc/%7B66e6c758-ae29-4bd5-8eb7-4cab3546b902%7D_favicon.png" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -19,7 +21,19 @@
 </head>
 
 <body>
-    {% block content %}{% endblock content %}
+    <nav class="navbar bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <img src="https://img03.en25.com/EloquaImages/clients/AvayaInc/%7B66e6c758-ae29-4bd5-8eb7-4cab3546b902%7D_favicon.png"
+                    alt="Avaya" class="d-inline-block align-text-center">
+                Red Carpet
+            </a>
+        </div>
+    </nav>
+
+    {% block content %}
+
+    {% endblock content %}
 </body>
 
 </html>

@@ -15,7 +15,7 @@
             <h1>{{title}}</h1>
             <div class="col-md-12">
 
-                <div class="table-responsive">
+                <div class="table-responsive tableFixHead">
 
                     <table class="table table-bordered table-hover">
                         <thead>
@@ -40,7 +40,12 @@
                                 <td class="text-center">{{employee.diploma}}</td>
                                 <td class="text-center">{{employee.handle}}</td>
                                 <td class="text-center">{{employee.email}}</td> -->
-                                <td class="text-center">{{employee.onboarded}}</td>
+                                {% if employee.onboarded %}
+                                <td class="text-center" style="background-color: lightskyblue;">{{employee.onboarded}}
+                                    {% else %}
+                                <td class="text-center" style="background-color: lightgray;">{{employee.onboarded}}
+                                    {% endif %}
+                                </td>
                                 <td class="text-center">
                                     <a href="/select/employee/{{ employee.id }}" class="btn btn-primary">
                                         <i class="bi bi-search"></i></a>
@@ -50,12 +55,19 @@
                             {% endfor %}
                         </tbody>
                     </table>
-
-
                 </div>
                 <br>
-                <a href="/" class="btn btn-secondary">Exit</a>
+                <div class="text-center">
+                    Onboarded : {{ employees| filter(attribute="onboarded", value=true) | length }}
+                    <div class="vr"></div>
+                    Offboarded: {{ employees| filter(attribute="onboarded", value=false) | length }}
+                </div>
+                <br>
+                <div class="button-container">
+                    <a href="/" class="btn btn-secondary">Exit</a>
+                </div>
             </div>
+
 
         </div>
 

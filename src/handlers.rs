@@ -11,7 +11,7 @@ use tera::{Context, Tera};
 
 use crate::{
     models::{Employee, EmployeeErrorResponse},
-    persistence::{delete, list, update},
+    persistence::{delete, list, save, update},
 };
 
 type Templates = Arc<Tera>;
@@ -28,6 +28,13 @@ pub async fn home(Extension(templates): Extension<Templates>) -> impl IntoRespon
     context.insert("title", "Welcome to Avaya Red Carpet");
 
     Html(templates.render("home.html", &context).unwrap())
+}
+
+pub async fn new_employee_page(Extension(templates): Extension<Templates>) -> impl IntoResponse {
+    let mut context = Context::new();
+    context.insert("title", "Personal Details");
+
+    Html(templates.render("new_employee.html", &context).unwrap())
 }
 
 pub async fn list_employees(Extension(templates): Extension<Templates>) -> impl IntoResponse {
@@ -199,6 +206,47 @@ pub async fn handle_edit_form_data(
             context.insert("employees", &employees_list);
 
             Html(templates.render("employees.html", &context).unwrap())
+        }
+        Err(error) => {
+            debug!("{error:?}");
+            let error_response = EmployeeErrorResponse {
+                status: "error".to_string(),
+                description: error.to_string(),
+            };
+
+            context.insert("error", &error_response);
+            Html(templates.render("index.html", &context).unwrap())
+        }
+    }
+}
+
+pub async fn handle_save_form_data(
+    Extension(templates): Extension<Templates>,
+    Form(new_employee_data): Form<Employee>,
+) -> impl IntoResponse {
+    let mut context = Context::new();
+    context.insert("title", "Edit Employee");
+    debug!("new_employee_data.id ---> {:?}", new_employee_data.id);
+    let new_employee = Employee {
+        id: new_employee_data.id,
+        first_name: new_employee_data.first_name.clone(),
+        last_name: new_employee_data.last_name.clone(),
+        email: new_employee_data.email.clone(),
+        age: new_employee_data.age,
+        diploma: new_employee_data.diploma.clone(),
+        onboarded: new_employee_data.onboarded,
+        handle: new_employee_data.handle.clone(),
+        password: new_employee_data.password.clone(),
+    };
+
+    debug!("new_employee ---> {new_employee:?}");
+    let save_result = save(new_employee).await;
+
+    match save_result {
+        Ok(employee) => {
+            context.insert("employee", &employee);
+
+            Html(templates.render("new_emplolyee.html", &context).unwrap())
         }
         Err(error) => {
             debug!("{error:?}");

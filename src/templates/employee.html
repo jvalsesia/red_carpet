@@ -109,7 +109,7 @@
                                 <div class="modal-footer">
                                     <a href="/list/employees" class="btn btn-secondary"
                                         data-bs-dismiss="modal">Cancel</a>
-                                    <a href="/delete/employee/{{ employee.id }}" class="btn btn-danger">Yes</a>
+                                    <a href="/delete/employee/{{ employee.id }}" class="btn btn-primary">Yes</a>
                                 </div>
                             </div>
                         </div>
@@ -117,9 +117,11 @@
                 </div>
 
                 <br>
-                <a href="/list/employees" class="btn btn-secondary">Cancel</a>
-                <a href="/edit/employee/{{ employee.id }}" class="btn btn-warning">Edit</a>
-                <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#staticBackdrop">Delete</a>
+                <div class="button-container">
+                    <a href="/list/employees" class="btn btn-secondary">Cancel</a>
+                    <a href="/edit/employee/{{ employee.id }}" class="btn btn-warning">Edit</a>
+                    <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#staticBackdrop">Delete</a>
+                </div>
 
 
 

@@ -2,8 +2,31 @@
     max-height: 600px;
 }
 
+
+.tableFixHead {
+    overflow: auto;
+    height: 500px;
+}
+
+.tableFixHead thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+
 .text-center {
     text-align: center;
+}
+
+.button-container {
+    display: flex;
+    justify-content: space-evenly;
+}
+
+.button-container a {
+    width: 150px;
+    /* Set your desired fixed width for buttons */
 }
 
 .red-background {
@@ -12,4 +35,10 @@
 
 .green-background {
     background-color: lightgreen;
+}
+
+
+.card-width {
+    width: 400px;
+    /* Set your desired width */
 }
