@@ -1,20 +1,35 @@
 {% extends "base.html" %}
-{% block title %}{{title}}{% endblock title %}
+
 {% block content %}
-<h1>{{title}}</h1>
 
-{% if logged_in %}
-<a href="/me">View my page</a>
-<form method="post" action="/logout">
-    <input type="submit" value="Logout">
-</form>
-{% else %}
-<p>
-    <a href="/signup">Signup</a> or <a href="/login">Login</a>
-</p>
-{% endif %}
 
-<p>
-    <a href="/list/employees">View all employees</a>
-</p>
-{% endblock content %}
+<body>
+    <div class="container d-flex min-vh-100 justify-content-center align-items-center">
+        <div class="col-md-4">
+            <div class="card justify-content-center align-items-center shadow-lg p-3 mb-5 bg-body rounded">
+                <i class="bi bi-person-lines-fill" style="font-size: 8rem;"></i>
+                <div class="card-body">
+                    <h5 class="card-title">New Employee</h5>
+                    <p class="card-text">Submit new employee personal details</p>
+                    <a href="#" class="btn btn-primary">Submit</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+        </div>
+        <div class="col-md-4">
+            <div class="card justify-content-center align-items-center shadow-lg p-3 mb-5 bg-body rounded">
+                <i class="bi bi-person-workspace" style="font-size: 8rem;"></i>
+                <div class="card-body">
+                    <h5 class="card-title">IT Technician</h5>
+                    <p class="card-text">Manage new employees</p>
+                    <a href="/list/employees" class="btn btn-primary">Manage</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+
+{% endblock %}

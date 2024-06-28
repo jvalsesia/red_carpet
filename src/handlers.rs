@@ -1,20 +1,17 @@
-use std::{collections::HashMap, f32::consts::E, fs, path, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 
 use axum::{
     extract::{Path, Query, State},
     http::{self, Response, StatusCode},
-    response::{ErrorResponse, Html, IntoResponse},
+    response::{Html, IntoResponse},
     Extension, Form, Json,
 };
-use log::{debug, info};
+use log::debug;
 use tera::{Context, Tera};
 use uuid::Uuid;
 
 use crate::{
     database::DB,
-    errors::{
-        employee_already_exists_error, employee_no_diploma_error, employee_not_old_enough_error,
-    },
     models::{
         Employee, EmployeeData, EmployeeErrorResponse, EmployeeListResponse, EmployeeRequestBody,
         QueryOptions, SimpleEmployeeResponse,
@@ -37,8 +34,7 @@ pub async fn health_checker() -> impl IntoResponse {
 }
 
 pub async fn create_employee(
-    State(db): State<DB>,
-    Json(mut body): Json<EmployeeRequestBody>,
+    Json(body): Json<EmployeeRequestBody>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let employee = Employee {
         id: Some(Uuid::new_v4().to_string()),
@@ -72,11 +68,7 @@ pub async fn create_employee(
     }
 }
 
-pub async fn employees_list(
-    opts: Option<Query<QueryOptions>>,
-    Extension(templates): Extension<Templates>,
-    State(db): State<DB>,
-) -> impl IntoResponse {
+pub async fn employees_list(opts: Option<Query<QueryOptions>>) -> impl IntoResponse {
     let Query(opts) = opts.unwrap_or_default();
 
     let limit = opts.limit.unwrap_or(10);
@@ -112,11 +104,7 @@ pub async fn employees_list(
     }
 }
 
-pub async fn get_employee(
-    Path(id): Path<String>,
-    Extension(templates): Extension<Templates>,
-    State(db): State<DB>,
-) -> impl IntoResponse {
+pub async fn get_employee(Path(id): Path<String>) -> impl IntoResponse {
     //let vec = db.lock().await;
 
     let employees_list = list().await;
@@ -148,10 +136,7 @@ pub async fn get_employee(
     }
 }
 
-pub async fn generate_handle_and_password(
-    Path(id): Path<String>,
-    State(db): State<DB>,
-) -> impl IntoResponse {
+pub async fn generate_handle_and_password(Path(id): Path<String>) -> impl IntoResponse {
     let employees_list = list().await;
 
     match employees_list {
@@ -218,6 +203,13 @@ pub async fn index(Extension(templates): Extension<Templates>) -> impl IntoRespo
     Html(templates.render("index.html", &context).unwrap())
 }
 
+pub async fn home(Extension(templates): Extension<Templates>) -> impl IntoResponse {
+    let mut context = Context::new();
+    context.insert("title", "Welcome to Avaya Red Carpet");
+
+    Html(templates.render("home.html", &context).unwrap())
+}
+
 pub async fn list_employees(Extension(templates): Extension<Templates>) -> impl IntoResponse {
     let mut context = Context::new();
     context.insert("title", "List Employees");
@@ -251,7 +243,7 @@ pub async fn edit_employee(
     Extension(templates): Extension<Templates>,
 ) -> impl IntoResponse {
     let mut context = Context::new();
-    context.insert("title", "Edit Employee");
+    context.insert("title", "Employee");
 
     let employees_list = list().await;
 
@@ -320,8 +312,7 @@ pub async fn select_employee(
     Extension(templates): Extension<Templates>,
 ) -> impl IntoResponse {
     let mut context = Context::new();
-    context.insert("title", "Selected Employee");
-    context.insert("is_self", &true);
+    context.insert("title", "Employee");
     let employees_list = list().await;
 
     match employees_list {

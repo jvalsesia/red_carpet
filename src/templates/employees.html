@@ -1,30 +1,33 @@
 {% extends "base.html" %}
-{% block title %}{{title}}{% endblock title %}
+{% block title %}{% endblock title %}
 
 {% block content %}
-{% set_global current_id = "3" %}
 
-<h1>{{title}}</h1>
+
 {% if employees %}
 
 
 
 <body>
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-8">
+    <div class="container d-flex min-vh-100 justify-content-center align-items-center">
+
+        <div class="row justify-content-center shadow-lg p-3 mb-5 bg-body rounded">
+            <h1>{{title}}</h1>
+            <div class="col-md-12">
+
                 <div class="table-responsive">
+
                     <table class="table table-bordered table-hover">
                         <thead>
                             <tr>
                                 <th class="text-center" scope="col">First Name</th>
                                 <th class="text-center" scope="col">Last Name</th>
-                                <th class="text-center" scope="col">Age</th>
+                                <!-- <th class="text-center" scope="col">Age</th>
                                 <th class="text-center" scope="col">Diploma</th>
                                 <th class="text-center" scope="col">Handle</th>
-                                <th class="text-center" scope="col">Email</th>
+                                <th class="text-center" scope="col">Email</th> -->
                                 <th class="text-center" scope="col">Onboarded</th>
-                                <th class="text-center" scope="col"></th>
+                                <th class="text-center" scope="col">Personal Details</th>
 
                             </tr>
                         </thead>
@@ -33,26 +36,31 @@
                             <tr>
                                 <td class="text-center">{{employee.first_name}}</td>
                                 <td class="text-center">{{employee.last_name}}</td>
-                                <td class="text-center">{{employee.age}}</td>
+                                <!-- <td class="text-center">{{employee.age}}</td>
                                 <td class="text-center">{{employee.diploma}}</td>
                                 <td class="text-center">{{employee.handle}}</td>
-                                <td class="text-center">{{employee.email}}</td>
+                                <td class="text-center">{{employee.email}}</td> -->
                                 <td class="text-center">{{employee.onboarded}}</td>
                                 <td class="text-center">
-                                    <button onclick="window.location.href='/select/employee/{{ employee.id }}'"
-                                        class="btn btn-primary">
-                                        View
-                                    </button>
+                                    <a href="/select/employee/{{ employee.id }}" class="btn btn-primary">
+                                        <i class="bi bi-search"></i></a>
                                 </td>
 
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
+
+
                 </div>
+                <br>
+                <a href="/" class="btn btn-secondary">Exit</a>
             </div>
+
         </div>
+
     </div>
+
 
 </body>
 
@@ -60,5 +68,3 @@
 {% endif %}
 
 {% endblock content %}
-
-id="MainNavHelp"
