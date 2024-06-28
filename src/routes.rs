@@ -7,11 +7,13 @@ use axum::{
 use tera::Tera;
 
 use crate::{
+    api::{
+        create_employee, employees_list, generate_handle_and_password, get_employee, health_checker,
+    },
     database::DB,
     handlers::{
-        create_employee, delete_employee, edit_employee, employees_list,
-        generate_handle_and_password, get_employee, handle_edit_form_data, health_checker, home,
-        index, list_employees, select_employee, styles,
+        delete_employee, edit_employee, handle_edit_form_data, index, list_employees,
+        select_employee, styles,
     },
 };
 

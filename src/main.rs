@@ -5,6 +5,7 @@ use tokio::net::TcpListener;
 
 use crate::{persistence::create_persistence_store, routes::define_routes};
 
+pub mod api;
 pub mod database;
 pub mod errors;
 pub mod handlers;
