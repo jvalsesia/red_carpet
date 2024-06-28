@@ -6,7 +6,7 @@ use axum::{
     response::{Html, IntoResponse},
     Extension, Form,
 };
-use log::debug;
+use log::{debug, error, warn};
 use tera::{Context, Tera};
 use uuid::Uuid;
 
@@ -16,6 +16,14 @@ use crate::{
 };
 
 type Templates = Arc<Tera>;
+
+pub async fn styles() -> impl IntoResponse {
+    Response::builder()
+        .status(http::StatusCode::OK)
+        .header("Content-Type", "text/css")
+        .body(include_str!("./public/styles.css").to_owned())
+        .unwrap()
+}
 
 pub async fn index(Extension(templates): Extension<Templates>) -> impl IntoResponse {
     let mut context = Context::new();
@@ -38,11 +46,11 @@ pub async fn new_employee_page(Extension(templates): Extension<Templates>) -> im
     Html(templates.render("new_employee.html", &context).unwrap())
 }
 
-pub async fn save_success_page(Extension(templates): Extension<Templates>) -> impl IntoResponse {
+pub async fn save_result_page(Extension(templates): Extension<Templates>) -> impl IntoResponse {
     let mut context = Context::new();
     context.insert("title", "Personal Details");
 
-    Html(templates.render("save_success.html", &context).unwrap())
+    Html(templates.render("save_result.html", &context).unwrap())
 }
 
 pub async fn list_employees(Extension(templates): Extension<Templates>) -> impl IntoResponse {
@@ -252,28 +260,29 @@ pub async fn handle_save_form_data(
     let save_result = save(new_employee.clone()).await;
 
     match save_result {
-        Ok(employee) => {
-            context.insert("employee", &new_employee);
+        Ok(result) => {
+            if result {
+                context.insert("employee", &new_employee);
 
-            Html(templates.render("save_success.html", &context).unwrap())
+                Html(templates.render("save_result.html", &context).unwrap())
+            } else {
+                let warning_response = EmployeeErrorResponse {
+                    status: "warning".to_string(),
+                    description: "Employee already exists".to_string(),
+                };
+                warn!("{warning_response:?}");
+                context.insert("error", &warning_response);
+                Html(templates.render("index.html", &context).unwrap())
+            }
         }
-        Err(error) => {
-            debug!("{error:?}");
+        Err(_) => {
             let error_response = EmployeeErrorResponse {
                 status: "error".to_string(),
-                description: error.to_string(),
+                description: "Employee already exists".to_string(),
             };
-
+            error!("{error_response:?}");
             context.insert("error", &error_response);
             Html(templates.render("index.html", &context).unwrap())
         }
     }
-}
-
-pub async fn styles() -> impl IntoResponse {
-    Response::builder()
-        .status(http::StatusCode::OK)
-        .header("Content-Type", "text/css")
-        .body(include_str!("./public/styles.css").to_owned())
-        .unwrap()
 }

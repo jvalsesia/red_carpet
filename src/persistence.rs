@@ -16,37 +16,50 @@ pub fn create_persistence_store() -> Result<()> {
         info!("Persistence directory already exists: {DATA_DIR:?}");
     } else {
         info!("Creating Persistence directory : {DATA_DIR:?}");
-        let _d = fs::create_dir_all(DATA_DIR)?;
+        fs::create_dir_all(DATA_DIR)?
     }
 
     if Path::new(DATA_FILE).exists() {
         info!("Persistence file already exists: {DATA_FILE:?}");
     } else {
         info!("Creating Persistence file : {DATA_FILE:?}");
-        let _f = File::create(DATA_FILE)?;
+        File::create(DATA_FILE)?;
     }
 
     Ok(())
 }
 
-pub async fn save(employee: Employee) -> Result<String> {
-    let employee_file_path = Path::new(DATA_FILE);
-    let data = fs::read_to_string(employee_file_path).expect("Unable to read file");
-    let mut map_employees: HashMap<String, Employee> = HashMap::new();
+pub async fn save(employee: Employee) -> Result<bool> {
+    let employee_exists =
+        check_employee_exists(employee.first_name.clone(), employee.last_name.clone()).await;
 
-    //let mut employees: Vec<Employee> = Vec::new();
-    if fs::metadata(employee_file_path).unwrap().len() != 0 {
-        //  employees = serde_json::from_str(&data)?;
-        map_employees = serde_json::from_str(&data)?;
+    match employee_exists {
+        Ok(result) => {
+            if result {
+                debug!("Employee already exists");
+                Ok(false)
+            } else {
+                let employee_file_path = Path::new(DATA_FILE);
+                let data = fs::read_to_string(employee_file_path).expect("Unable to read file");
+                let mut map_employees: HashMap<String, Employee> = HashMap::new();
+
+                //let mut employees: Vec<Employee> = Vec::new();
+                if fs::metadata(employee_file_path).unwrap().len() != 0 {
+                    //  employees = serde_json::from_str(&data)?;
+                    map_employees = serde_json::from_str(&data)?;
+                }
+                map_employees.insert(employee.id.clone().unwrap(), employee.clone());
+                // employees.push(employee.clone());
+
+                let json: String = serde_json::to_string_pretty(&map_employees)?;
+                fs::write(employee_file_path, json).expect("Unable to write file");
+                debug!("saving employee: {employee:?}");
+
+                Ok(true)
+            }
+        }
+        Err(_) => Ok(false),
     }
-    map_employees.insert(employee.id.clone().unwrap(), employee.clone());
-    // employees.push(employee.clone());
-
-    let json: String = serde_json::to_string_pretty(&map_employees)?;
-    fs::write(employee_file_path, &json).expect("Unable to write file");
-    debug!("saving employee: {employee:?}");
-
-    Ok(json)
 }
 
 pub async fn update(modified_employee: Employee) -> Result<HashMap<String, Employee>> {
@@ -66,7 +79,7 @@ pub async fn update(modified_employee: Employee) -> Result<HashMap<String, Emplo
         .or_insert(modified_employee.clone());
 
     let json: String = serde_json::to_string_pretty(&map_employees)?;
-    fs::write(employee_file_path, &json).expect("Unable to write file");
+    fs::write(employee_file_path, json).expect("Unable to write file");
     debug!("updated employee: {modified_employee:?}");
 
     Ok(map_employees)
@@ -90,7 +103,7 @@ pub async fn delete(id: String) -> Result<HashMap<String, Employee>> {
     // employees.push(employee.clone());
 
     let json: String = serde_json::to_string_pretty(&map_employees)?;
-    fs::write(employee_file_path, &json).expect("Unable to write file");
+    fs::write(employee_file_path, json).expect("Unable to write file");
 
     Ok(map_employees)
 }
@@ -109,7 +122,25 @@ pub async fn list() -> Result<HashMap<String, Employee>> {
     }
 
     let json: String = serde_json::to_string_pretty(&map_employees)?;
-    fs::write(employee_file_path, &json).expect("Unable to write file");
+    fs::write(employee_file_path, json).expect("Unable to write file");
 
     Ok(map_employees)
+}
+
+pub async fn check_employee_exists(first_name: String, last_name: String) -> Result<bool> {
+    let employee_file_path = Path::new(DATA_FILE);
+    let data = fs::read_to_string(employee_file_path).expect("Unable to read file");
+    let mut map_employees: HashMap<String, Employee> = HashMap::new();
+
+    //let mut employees: Vec<Employee> = Vec::new();
+    if fs::metadata(employee_file_path).unwrap().len() != 0 {
+        //  employees = serde_json::from_str(&data)?;
+        map_employees = serde_json::from_str(&data)?;
+    }
+
+    let employee_exists = map_employees
+        .values()
+        .any(|employee| employee.first_name == first_name && employee.last_name == last_name);
+
+    Ok(employee_exists)
 }

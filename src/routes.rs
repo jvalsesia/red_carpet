@@ -13,7 +13,7 @@ use crate::{
     database::DB,
     handlers::{
         delete_employee, edit_employee, handle_edit_form_data, handle_save_form_data, index,
-        list_employees, new_employee_page, save_success_page, select_employee, styles,
+        list_employees, new_employee_page, save_result_page, select_employee, styles,
     },
 };
 
@@ -28,8 +28,8 @@ pub async fn define_routes(db: DB, mut tera: Tera) -> Router {
             include_str!("./templates/new_employee.html"),
         ),
         (
-            "save_success.html",
-            include_str!("./templates/save_success.html"),
+            "save_result.html",
+            include_str!("./templates/save_result.html"),
         ),
         ("edit_form.html", include_str!("./templates/edit_form.html")),
         (
@@ -57,7 +57,7 @@ pub async fn define_routes(db: DB, mut tera: Tera) -> Router {
         .route("/update/employee", post(handle_edit_form_data))
         .route("/new/employee", get(new_employee_page))
         .route("/save/employee", post(handle_save_form_data))
-        .route("/save/success", get(save_success_page))
+        .route("/save/success", get(save_result_page))
         .route("/delete/employee/:id", get(delete_employee))
         .route("/select/employee/:id", get(select_employee))
         .layer(Extension(Arc::new(tera)))
