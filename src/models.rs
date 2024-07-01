@@ -7,7 +7,8 @@ pub struct Employee {
     pub id: Option<String>,
     pub first_name: String,
     pub last_name: String,
-    pub email: Option<String>,
+    pub personal_email: Option<String>,
+    pub avaya_email: Option<String>,
     pub age: u32,
     pub diploma: String,
     pub onboarded: Option<bool>,
@@ -19,6 +20,7 @@ pub struct Employee {
 pub struct EmployeeRequestBody {
     pub first_name: String,
     pub last_name: String,
+    pub personal_email: Option<String>,
     pub age: u32,
     pub diploma: String,
 }

@@ -13,6 +13,7 @@ use uuid::Uuid;
 use crate::{
     models::{Employee, EmployeeErrorResponse},
     persistence::{delete, list, save, update},
+    utils::{generate_handle, generate_random_password},
 };
 
 type Templates = Arc<Tera>;
@@ -202,7 +203,8 @@ pub async fn handle_edit_form_data(
         id: modified_employee_data.id,
         first_name: modified_employee_data.first_name.clone(),
         last_name: modified_employee_data.last_name.clone(),
-        email: modified_employee_data.email.clone(),
+        personal_email: modified_employee_data.personal_email.clone(),
+        avaya_email: modified_employee_data.avaya_email.clone(),
         age: modified_employee_data.age,
         diploma: modified_employee_data.diploma.clone(),
         onboarded: modified_employee_data.onboarded,
@@ -248,7 +250,8 @@ pub async fn handle_save_form_data(
         id,
         first_name: new_employee_data.first_name.clone(),
         last_name: new_employee_data.last_name.clone(),
-        email: new_employee_data.email.clone(),
+        personal_email: new_employee_data.personal_email.clone(),
+        avaya_email: new_employee_data.avaya_email.clone(),
         age: new_employee_data.age,
         diploma: new_employee_data.diploma.clone(),
         onboarded: Some(false),
@@ -281,6 +284,57 @@ pub async fn handle_save_form_data(
                 description: "Employee already exists".to_string(),
             };
             error!("{error_response:?}");
+            context.insert("error", &error_response);
+            Html(templates.render("index.html", &context).unwrap())
+        }
+    }
+}
+
+pub async fn handle_onboard_form_data(
+    Extension(templates): Extension<Templates>,
+    Form(onboarding_employee): Form<Employee>,
+) -> impl IntoResponse {
+    let mut context = Context::new();
+    context.insert("title", "Edit Employee");
+    let new_handle = generate_handle(
+        onboarding_employee.first_name.clone(),
+        onboarding_employee.last_name.clone(),
+    )
+    .await;
+
+    let employee = Employee {
+        id: onboarding_employee.id.clone(),
+        first_name: onboarding_employee.first_name.clone(),
+        last_name: onboarding_employee.last_name.clone(),
+        personal_email: onboarding_employee.personal_email.clone(),
+        avaya_email: Some(format!("{}@avaya.com", new_handle)),
+        age: onboarding_employee.age,
+        diploma: onboarding_employee.diploma.clone(),
+        onboarded: Some(true),
+        handle: Some(new_handle),
+        password: Some(generate_random_password().await),
+    };
+
+    debug!("onboarding_employee ---> {:?}", onboarding_employee);
+    let employees_map = update(employee.clone()).await;
+
+    match employees_map {
+        Ok(employees) => {
+            let mut employees_list: Vec<Employee> = employees.into_values().collect();
+            employees_list.sort_by(|x, y| x.first_name.cmp(&y.first_name));
+            debug!("{employees_list:?}");
+
+            context.insert("employees", &employees_list);
+
+            Html(templates.render("employees.html", &context).unwrap())
+        }
+        Err(error) => {
+            debug!("{error:?}");
+            let error_response = EmployeeErrorResponse {
+                status: "error".to_string(),
+                description: error.to_string(),
+            };
+
             context.insert("error", &error_response);
             Html(templates.render("index.html", &context).unwrap())
         }

@@ -46,14 +46,14 @@
 
                         <div class="form-floating">
 
-                            <input required class="form-control" name="email" id="email" type="email" placeholder=""
-                                value="{{employee.email}}">
-                            <label for="email">Email</label>
+                            <input required class="form-control" name="personal_email" id="personal_email" type="email"
+                                placeholder="" value="{{employee.personal_email}}">
+                            <label for="personal_email">Personal Email</label>
                             <div class="valid-feedback">
                                 Looks good!
                             </div>
                             <div class="invalid-feedback">
-                                Please enter the email.
+                                Please enter your personal email.
                             </div>
                         </div>
                         <br>
@@ -108,7 +108,7 @@
 
 
                         <div class="form-floating">
-                            <input required class="form-control" name="handle" id="handle" type="text" placeholder=""
+                            <input class="form-control" name="handle" id="handle" type="text" placeholder=""
                                 value="{{employee.handle}}">
                             <label for="handle">handle</label>
                             <div class="valid-feedback">
@@ -123,7 +123,7 @@
 
 
                         <div class="form-floating">
-                            <input required type="password" class="form-control" name="password" id="password"
+                            <input type="password" class="form-control" name="password" id="password"
                                 placeholder="Password" value="{{employee.password}}">
                             <label for="password">Password</label>
                             <div class="valid-feedback">
@@ -163,39 +163,17 @@
                         </div>
                     </div>
 
-                    <!-- Modal -->
-                    <div class="modal fade" id="handle_staticBackdrop" data-bs-backdrop="static"
-                        data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-top">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h1 class="modal-title fs-5" id="staticBackdropLabel">Edit Employee</h1>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                        aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    Are you sure you want to genrate the hanlde and the password for this employee?
-                                    <br>
-                                    {{ employee.first_name }} {{ employee.last_name }}
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary"
-                                        data-bs-dismiss="modal">Close</button>
-                                    <button type="submit" form="update_form" class="btn btn-primary">Yes</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+
 
                 </div>
                 <br>
 
                 <div class="button-container">
-                    <a href="/select/employee/{{ employee.id }}" class="btn btn-secondary">Cancel</a>
+                    <a href="/list/employees" class="btn btn-secondary">Cancel</a>
                     <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#edit_staticBackdrop">Save</a>
-                    <!-- <a class="btn btn-primary text-right" data-bs-toggle="modal"
-                        data-bs-target="#handle_staticBackdrop">Generate Handle</a> -->
+
                 </div>
+
 
                 {% endif %}
             </div>

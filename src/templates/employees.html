@@ -9,11 +9,19 @@
 
 
 <body>
+
+
+
+
+
     <div class="container d-flex min-vh-100 justify-content-center align-items-center">
 
         <div class="row justify-content-center shadow-lg p-3 mb-5 bg-body rounded">
             <h1>{{title}}</h1>
             <div class="col-md-12">
+
+
+
 
                 <div class="table-responsive tableFixHead">
 
@@ -25,21 +33,51 @@
                                 <!-- <th class="text-center" scope="col">Age</th>
                                 <th class="text-center" scope="col">Diploma</th>
                                 <th class="text-center" scope="col">Handle</th>
-                                <th class="text-center" scope="col">Email</th> -->
+                                <th class="text-center" scope="col">Personal Email</th> -->
                                 <th class="text-center" scope="col">Onboarded</th>
-                                <th class="text-center" scope="col">Personal Details</th>
+                                <th class="text-center" scope="col">Details</th>
+
+                                <th class="text-center" scope="col">Edit</th>
+                                <th class="text-center" scope="col">Delete</th>
 
                             </tr>
                         </thead>
                         <tbody>
                             {% for employee in employees %}
+
+                            <!-- Modal -->
+                            <div class="modal fade" id="{{employee.id}}delete" data-bs-backdrop="static"
+                                data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel"
+                                aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h1 class="modal-title fs-5" id="staticBackdropLabel">Delete Employee</h1>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            Are you sure you want to delete this employee?
+                                            <br>
+                                            {{employee.first_name}} {{employee.last_name}}
+                                        </div>
+                                        <div class="modal-footer">
+                                            <a href="/list/employees" class="btn btn-secondary"
+                                                data-bs-dismiss="modal">Cancel</a>
+                                            <a href="/delete/employee/{{ employee.id }}" class="btn btn-primary">Yes</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
                             <tr>
                                 <td class="text-center">{{employee.first_name}}</td>
                                 <td class="text-center">{{employee.last_name}}</td>
                                 <!-- <td class="text-center">{{employee.age}}</td>
                                 <td class="text-center">{{employee.diploma}}</td>
                                 <td class="text-center">{{employee.handle}}</td>
-                                <td class="text-center">{{employee.email}}</td> -->
+                                <td class="text-center">{{employee.personal_email}}</td> -->
                                 {% if employee.onboarded %}
                                 <td class="text-center" style="background-color: lightgreen;">{{employee.onboarded}}
                                     {% else %}
@@ -48,7 +86,18 @@
                                 </td>
                                 <td class="text-center">
                                     <a href="/select/employee/{{ employee.id }}" class="btn btn-primary">
-                                        <i class="bi bi-search"></i></a>
+                                        <i class="bi bi-person-vcard-fill"></i></a>
+                                </td>
+
+                                <td class="text-center">
+                                    <a href="/edit/employee/{{ employee.id }}" class="btn btn-warning">
+                                        <i class="bi bi-pencil-fill"></i></a>
+                                </td>
+
+                                <td class="text-center">
+                                    <a class="btn btn-danger" data-bs-toggle="modal"
+                                        data-bs-target="#{{employee.id}}delete">
+                                        <i class="bi bi-trash-fill"></i></a>
                                 </td>
 
                             </tr>
