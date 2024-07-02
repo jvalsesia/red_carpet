@@ -54,12 +54,11 @@ pub async fn save_result_page(Extension(templates): Extension<Templates>) -> imp
     Html(templates.render("save_result.html", &context).unwrap())
 }
 
-pub async fn list_employees(Extension(templates): Extension<Templates>) -> impl IntoResponse {
-    let mut context = Context::new();
-    context.insert("title", "List Employees");
-    context.insert("selected_id", "");
-
-    let employees_map = list().await;
+async fn sort_by_first_name(
+    employees_map: Result<HashMap<String, Employee>, std::io::Error>,
+    mut context: Context,
+    templates: Arc<Tera>,
+) -> Html<String> {
     match employees_map {
         Ok(employees) => {
             let mut employees_list: Vec<Employee> = employees.into_values().collect();
@@ -83,6 +82,15 @@ pub async fn list_employees(Extension(templates): Extension<Templates>) -> impl 
     }
 }
 
+pub async fn list_employees(Extension(templates): Extension<Templates>) -> impl IntoResponse {
+    let mut context = Context::new();
+    context.insert("title", "List Employees");
+    context.insert("selected_id", "");
+
+    let employees_map = list().await;
+    sort_by_first_name(employees_map, context, templates).await
+}
+
 pub async fn edit_employee(
     Path(id): Path<String>,
     Extension(templates): Extension<Templates>,
@@ -92,6 +100,16 @@ pub async fn edit_employee(
 
     let employees_map = list().await;
 
+    filter_by_id(employees_map, id, "edit_form.html", context, templates).await
+}
+
+async fn filter_by_id(
+    employees_map: Result<HashMap<String, Employee>, std::io::Error>,
+    id: String,
+    tempate_name: &str,
+    mut context: Context,
+    templates: Arc<Tera>,
+) -> Html<String> {
     match employees_map {
         Ok(employees) => {
             // list not onboarded employees
@@ -107,7 +125,7 @@ pub async fn edit_employee(
 
             context.insert("employee", &employee);
 
-            Html(templates.render("edit_form.html", &context).unwrap())
+            Html(templates.render(tempate_name, &context).unwrap())
         }
         Err(error) => {
             debug!("{error:?}");
@@ -131,25 +149,7 @@ pub async fn delete_employee(
 
     let employees_map = delete(id).await;
 
-    match employees_map {
-        Ok(employees) => {
-            let mut employees_list: Vec<Employee> = employees.into_values().collect();
-            employees_list.sort_by(|x, y| x.first_name.cmp(&y.first_name));
-            context.insert("employees", &employees_list);
-
-            Html(templates.render("employees.html", &context).unwrap())
-        }
-        Err(error) => {
-            debug!("{error:?}");
-            let error_response = EmployeeErrorResponse {
-                status: "error".to_string(),
-                description: error.to_string(),
-            };
-
-            context.insert("error", &error_response);
-            Html(templates.render("index.html", &context).unwrap())
-        }
-    }
+    sort_by_first_name(employees_map, context, templates).await
 }
 
 pub async fn select_employee(
@@ -160,33 +160,7 @@ pub async fn select_employee(
     context.insert("title", "Employee");
 
     let employees_map = list().await;
-    match employees_map {
-        Ok(employees) => {
-            // list not onboarded employees
-            let filtered_employees: HashMap<String, Employee> = employees
-                .into_iter()
-                .filter(|(_id, employee)| employee.id == Some(id.clone()))
-                .collect();
-
-            let employees_list: Vec<Employee> = filtered_employees.into_values().collect();
-
-            let employee = employees_list.first().unwrap();
-
-            context.insert("employee", &employee);
-
-            Html(templates.render("employee.html", &context).unwrap())
-        }
-        Err(error) => {
-            debug!("{error:?}");
-            let error_response = EmployeeErrorResponse {
-                status: "error".to_string(),
-                description: error.to_string(),
-            };
-
-            context.insert("error", &error_response);
-            Html(templates.render("index.html", &context).unwrap())
-        }
-    }
+    filter_by_id(employees_map, id, "employee.html", context, templates).await
 }
 
 pub async fn handle_edit_form_data(
@@ -215,27 +189,7 @@ pub async fn handle_edit_form_data(
     debug!("modified_employee ---> {modified_employee:?}");
     let employees_map = update(modified_employee).await;
 
-    match employees_map {
-        Ok(employees) => {
-            let mut employees_list: Vec<Employee> = employees.into_values().collect();
-            employees_list.sort_by(|x, y| x.first_name.cmp(&y.first_name));
-            debug!("{employees_list:?}");
-
-            context.insert("employees", &employees_list);
-
-            Html(templates.render("employees.html", &context).unwrap())
-        }
-        Err(error) => {
-            debug!("{error:?}");
-            let error_response = EmployeeErrorResponse {
-                status: "error".to_string(),
-                description: error.to_string(),
-            };
-
-            context.insert("error", &error_response);
-            Html(templates.render("index.html", &context).unwrap())
-        }
-    }
+    sort_by_first_name(employees_map, context, templates).await
 }
 
 pub async fn handle_save_form_data(
@@ -318,25 +272,5 @@ pub async fn handle_onboard_form_data(
     debug!("onboarding_employee ---> {:?}", onboarding_employee);
     let employees_map = update(employee.clone()).await;
 
-    match employees_map {
-        Ok(employees) => {
-            let mut employees_list: Vec<Employee> = employees.into_values().collect();
-            employees_list.sort_by(|x, y| x.first_name.cmp(&y.first_name));
-            debug!("{employees_list:?}");
-
-            context.insert("employees", &employees_list);
-
-            Html(templates.render("employees.html", &context).unwrap())
-        }
-        Err(error) => {
-            debug!("{error:?}");
-            let error_response = EmployeeErrorResponse {
-                status: "error".to_string(),
-                description: error.to_string(),
-            };
-
-            context.insert("error", &error_response);
-            Html(templates.render("index.html", &context).unwrap())
-        }
-    }
+    sort_by_first_name(employees_map, context, templates).await
 }
