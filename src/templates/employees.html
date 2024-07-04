@@ -72,18 +72,28 @@
 
 
                             <tr>
-                                <td class="text-center">{{employee.first_name}}</td>
-                                <td class="text-center">{{employee.last_name}}</td>
-                                <!-- <td class="text-center">{{employee.age}}</td>
-                                <td class="text-center">{{employee.diploma}}</td>
-                                <td class="text-center">{{employee.handle}}</td>
-                                <td class="text-center">{{employee.personal_email}}</td> -->
+                                {% if employee.onboarded %}
+                                <td class="text-center" style="background-color: lightgreen;">{{employee.first_name}}
+                                </td>
+                                {% else %}
+                                <td class="text-center" style="background-color: lightcoral;">{{employee.first_name}}
+                                </td>
+                                {% endif %}
+                                {% if employee.onboarded %}
+                                <td class="text-center" style="background-color: lightgreen;">{{employee.last_name}}
+                                </td>
+                                {% else %}
+                                <td class="text-center" style="background-color: lightcoral;">{{employee.last_name}}
+                                </td>
+                                {% endif %}
+
                                 {% if employee.onboarded %}
                                 <td class="text-center" style="background-color: lightgreen;">{{employee.onboarded}}
-                                    {% else %}
-                                <td class="text-center" style="background-color: lightcoral;">{{employee.onboarded}}
-                                    {% endif %}
                                 </td>
+                                {% else %}
+                                <td class="text-center" style="background-color: lightcoral;">{{employee.onboarded}}
+                                </td>
+                                {% endif %}
                                 <td class="text-center">
                                     <a href="/select/employee/{{ employee.id }}" class="btn btn-primary">
                                         <i class="bi bi-person-vcard-fill"></i></a>

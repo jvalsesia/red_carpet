@@ -13,7 +13,7 @@ use uuid::Uuid;
 use crate::{
     models::{Employee, EmployeeErrorResponse},
     persistence::{delete, list, save, update},
-    utils::{generate_handle, generate_random_password},
+    utils::{generate_handle, generate_random_password, verify_hashed_password},
 };
 
 type Templates = Arc<Tera>;
@@ -273,4 +273,27 @@ pub async fn handle_onboard_form_data(
     let employees_map = update(employee.clone()).await;
 
     sort_by_first_name(employees_map, context, templates).await
+}
+
+pub async fn verify_password(
+    Extension(templates): Extension<Templates>,
+    password: String,
+    hashed_password: String,
+) -> impl IntoResponse {
+    let mut context = Context::new();
+    context.insert("title", "Edit Employee");
+
+    let password_verified = verify_hashed_password(password.clone(), hashed_password.clone()).await;
+
+    if password == hashed_password {
+        Html(templates.render("onboard.html", &context).unwrap())
+    } else {
+        let error_response = EmployeeErrorResponse {
+            status: "error".to_string(),
+            description: "Invalid password".to_string(),
+        };
+        error!("{error_response:?}");
+        context.insert("error", &error_response);
+        Html(templates.render("index.html", &context).unwrap())
+    }
 }

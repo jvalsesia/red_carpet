@@ -1,15 +1,29 @@
+use log::{error, warn};
+use pbkdf2::{
+    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+    Pbkdf2,
+};
 use rand::seq::SliceRandom;
 
 pub const LOWER_CASE: &str = "abcdefghijklmnopqrstuvxyz";
 pub const UPPER_CASE: &str = "ABCDEFGHIJKLMNOPQRSTUVXYZ";
 pub const SPECIAL_CHARACTER: &str = "!@#$%&*()_-+=,.:;?/|";
 pub const NUMBERS: &str = "1234567890";
+pub const SALT: &str = "BUhXaUknrBiPCEQrX7Ob/w";
 
 async fn password(library: String, size: u32) -> String {
     let l: Vec<char> = library.chars().collect();
     (0..size)
         .map(|_| *l.choose(&mut rand::thread_rng()).unwrap())
         .collect()
+}
+
+pub async fn generate_handle(first_name: String, last_name: String) -> String {
+    format!(
+        "{}{}",
+        first_name.to_lowercase().chars().next().unwrap(),
+        last_name.to_lowercase()
+    )
 }
 
 pub async fn generate_random_password() -> String {
@@ -22,13 +36,50 @@ pub async fn generate_random_password() -> String {
     let end = [LOWER_CASE, UPPER_CASE, NUMBERS].concat();
     let password_end = password(end, 1).await;
 
-    [password_begin, password_middle, password_end].concat()
+    let salt = get_salt();
+    warn!("Salt2: {}", salt);
+
+    // Hash password to PHC string ($pbkdf2-sha256$...)
+    let password_hash = Pbkdf2
+        .hash_password(
+            [password_begin, password_middle, password_end]
+                .concat()
+                .as_bytes(),
+            &salt,
+        )
+        .unwrap()
+        .to_string();
+    password_hash
 }
 
-pub async fn generate_handle(first_name: String, last_name: String) -> String {
-    format!(
-        "{}{}",
-        first_name.to_lowercase().chars().next().unwrap(),
-        last_name.to_lowercase()
-    )
+fn get_salt() -> SaltString {
+    let salt = match SaltString::from_b64(SALT) {
+        Ok(salt) => {
+            // Use the salt here
+            warn!("Salt: {}", salt);
+            salt
+        }
+        Err(err) => {
+            // Handle the error case, e.g., invalid B64 string
+            error!("Error decoding salt: {}", err);
+            SaltString::generate(&mut OsRng)
+        }
+    };
+    salt
+}
+
+pub async fn verify_hashed_password(password: String, hashed_password: String) -> bool {
+    let parsed_hash = PasswordHash::new(&hashed_password).unwrap();
+    Pbkdf2
+        .verify_password(password.as_bytes(), &parsed_hash)
+        .is_ok()
+}
+
+pub async fn get_hashed_password(password: String) -> String {
+    let salt = get_salt();
+    let password_hash = Pbkdf2
+        .hash_password(password.as_bytes(), &salt)
+        .unwrap()
+        .to_string();
+    password_hash
 }
