@@ -7,35 +7,48 @@ use axum::{
 use tera::Tera;
 
 use crate::{
-    api::{
-        create_employee, employees_list, generate_handle_and_password, get_employee, health_checker,
-    },
-    database::DB,
-    handlers::{
+    database::database::DB,
+    frontend::handlers::{
         delete_employee, edit_employee, handle_edit_form_data, handle_onboard_form_data,
         handle_save_form_data, index, list_employees, new_employee_page, save_result_page,
         select_employee, styles,
     },
 };
 
+use super::api::{
+    create_employee, employees_list, generate_handle_and_password, get_employee, health_checker,
+};
+
 pub async fn define_routes(db: DB, mut tera: Tera) -> Router {
     tera.add_raw_templates(vec![
-        ("base.html", include_str!("./templates/base.html")),
-        ("index.html", include_str!("./templates/index.html")),
-        ("employee.html", include_str!("./templates/employee.html")),
-        ("employees.html", include_str!("./templates/employees.html")),
+        ("base.html", include_str!("../frontend/templates/base.html")),
+        (
+            "index.html",
+            include_str!("../frontend/templates/index.html"),
+        ),
+        (
+            "employee.html",
+            include_str!("../frontend/templates/employee.html"),
+        ),
+        (
+            "employees.html",
+            include_str!("../frontend/templates/employees.html"),
+        ),
         (
             "new_employee.html",
-            include_str!("./templates/new_employee.html"),
+            include_str!("../frontend/templates/new_employee.html"),
         ),
         (
             "save_result.html",
-            include_str!("./templates/save_result.html"),
+            include_str!("../frontend/templates/save_result.html"),
         ),
-        ("edit_form.html", include_str!("./templates/edit_form.html")),
+        (
+            "edit_form.html",
+            include_str!("../frontend/templates/edit_form.html"),
+        ),
         (
             "delete_confirmation.html",
-            include_str!("./templates/delete_confirmation.html"),
+            include_str!("../frontend/templates/delete_confirmation.html"),
         ),
     ])
     .unwrap();

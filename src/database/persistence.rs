@@ -1,12 +1,13 @@
 use log::{debug, info};
 
-use crate::models::Employee;
 use std::{
     collections::HashMap,
     fs::{self, File},
     io::Result,
     path::Path,
 };
+
+use crate::models::models::Employee;
 
 const DATA_DIR: &str = "data";
 const DATA_FILE: &str = "data/employees.json";

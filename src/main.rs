@@ -1,17 +1,14 @@
-use database::employee_db;
+use backend::routes::define_routes;
+
+use database::{database::employee_db, persistence::create_persistence_store};
 use log::info;
 use tera::Tera;
 use tokio::net::TcpListener;
 
-use crate::{persistence::create_persistence_store, routes::define_routes};
-
-pub mod api;
+pub mod backend;
 pub mod database;
-pub mod errors;
-pub mod handlers;
+pub mod frontend;
 pub mod models;
-pub mod persistence;
-pub mod routes;
 pub mod utils;
 
 #[tokio::main]

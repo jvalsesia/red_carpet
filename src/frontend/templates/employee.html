@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+{% block title %}{% endblock title %}
+{% block content %}
+
+<body>
+    <div class="container d-flex min-vh-100 justify-content-center align-items-center">
+
+
+
+        <div class="row justify-content-center  shadow-lg p-3 mb-5 bg-body rounded">
+            <h1>{{title}}</h1>
+            <div class="col-md-12">
+
+                <div class="table-responsive">
+
+                    {% if employee %}
+                    <form id="onboard_form" method="POST" enctype="application/x-www-form-urlencoded"
+                        action="/onboard/employee">
+
+                        <input readonly id="id" name="id" type="hidden" value="{{employee.id}}">
+
+
+                        <div class="form-floating">
+
+                            <input readonly class="form-control" id="first_name" name="first_name" type="text"
+                                placeholder="" value="{{employee.first_name}}">
+                            <label for="first_name">First Name</label>
+                        </div>
+
+
+
+
+                        <div class="form-floating">
+
+                            <input readonly class="form-control" name="last_name" id="last_name" type="text"
+                                placeholder="" value="{{employee.last_name}}">
+                            <label for="last_name">Last Name</label>
+                        </div>
+
+
+                        <div class="form-floating">
+
+                            <input readonly class="form-control" name="personal_email" id="personal_email" type="email"
+                                placeholder="" value="{{employee.personal_email}}">
+                            <label for="personal_email">Personal Email</label>
+                        </div>
+
+
+                        <div class="form-floating">
+
+                            <input readonly class="form-control" name="age" id="age" type="number" placeholder=""
+                                value="{{employee.age}}">
+                            <label for="age">Age</label>
+                        </div>
+
+
+
+                        <div class="form-floating">
+
+                            <input readonly class="form-control" name="diploma" id="diploma" type="text" placeholder=""
+                                value="{{employee.diploma}}">
+                            <label for="diploma">Diploma</label>
+                        </div>
+
+
+
+                        <div class="form-floating">
+
+                            {% if employee.onboarded %}
+
+                            <input readonly style="background-color: lightgreen;" class="form-control" name="onboarded"
+                                id="onboarded" type="text" placeholder="" value="{{employee.onboarded}}">
+                            {% else %}
+                            <input readonly style="background-color: lightcoral;" class="form-control" name="onboarded"
+                                id="onboarded" type="text" placeholder="" value="{{employee.onboarded}}">
+
+                            {% endif %}
+                            </td>
+
+                            <label for="onboarded">Onboarded</label>
+                        </div>
+
+
+
+                        <div class="form-floating">
+
+                            <input readonly class="form-control" name="handle" id="handle" type="text" placeholder=""
+                                value="{{employee.handle}}">
+                            <label for="handle">handle</label>
+                        </div>
+
+
+
+                        <div class="form-floating">
+
+                            <input readonly type="password" class="form-control" name="password" id="password"
+                                placeholder="Password" value="{{employee.password}}">
+                            <label for="password">Password</label>
+
+
+                        </div>
+
+
+
+
+
+
+                    </form>
+
+                    <form id="secure_password_form" method="POST" enctype="application/x-www-form-urlencoded"
+                        action="/securepassword/employee">
+
+                        <input readonly id="id" name="id" type="hidden" value="{{employee.id}}">
+
+
+                        <div class="form-floating">
+
+                            <input readonly class="form-control" id="first_name" name="first_name" type="text"
+                                placeholder="" value="{{employee.first_name}}">
+                            <label for="first_name">First Name</label>
+                        </div>
+
+
+
+
+                        <div class="form-floating">
+
+                            <input readonly class="form-control" name="last_name" id="last_name" type="text"
+                                placeholder="" value="{{employee.last_name}}">
+                            <label for="last_name">Last Name</label>
+                        </div>
+
+
+                        <div class="form-floating">
+
+                            <input readonly class="form-control" name="personal_email" id="personal_email" type="email"
+                                placeholder="" value="{{employee.personal_email}}">
+                            <label for="personal_email">Personal Email</label>
+                        </div>
+
+
+                        <div class="form-floating">
+
+                            <input readonly class="form-control" name="age" id="age" type="number" placeholder=""
+                                value="{{employee.age}}">
+                            <label for="age">Age</label>
+                        </div>
+
+
+
+                        <div class="form-floating">
+
+                            <input readonly class="form-control" name="diploma" id="diploma" type="text" placeholder=""
+                                value="{{employee.diploma}}">
+                            <label for="diploma">Diploma</label>
+                        </div>
+
+
+
+                        <div class="form-floating">
+
+                            {% if employee.onboarded %}
+
+                            <input readonly style="background-color: lightgreen;" class="form-control" name="onboarded"
+                                id="onboarded" type="text" placeholder="" value="{{employee.onboarded}}">
+                            {% else %}
+                            <input readonly style="background-color: lightcoral;" class="form-control" name="onboarded"
+                                id="onboarded" type="text" placeholder="" value="{{employee.onboarded}}">
+
+                            {% endif %}
+                            </td>
+
+                            <label for="onboarded">Onboarded</label>
+                        </div>
+
+
+
+                        <div class="form-floating">
+
+                            <input readonly class="form-control" name="handle" id="handle" type="text" placeholder=""
+                                value="{{employee.handle}}">
+                            <label for="handle">handle</label>
+                        </div>
+
+
+
+                        <div class="form-floating">
+
+                            <input readonly type="password" class="form-control" name="password" id="password"
+                                placeholder="Password" value="{{employee.password}}">
+                            <label for="password">Password</label>
+
+
+                        </div>
+
+
+
+
+
+
+                    </form>
+                    <!-- Modal -->
+                    <div class="modal fade" id="onboard_staticBackdrop" data-bs-backdrop="static"
+                        data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-top">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h1 class="modal-title fs-5" id="staticBackdropLabel">Edit Employee</h1>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    Are you sure you want to onboard this employee?
+                                    <br>
+                                    {{ employee.first_name }} {{ employee.last_name }}
+                                    <br>
+                                    Password: {{ employee.password }}
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary"
+                                        data-bs-dismiss="modal">Close</button>
+                                    <button type="submit" form="onboard_form" class="btn btn-primary">Yes</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modal -->
+                    <div class="modal fade" id="secure-password-modal" data-bs-backdrop="static"
+                        data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-top">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h1 class="modal-title fs-5" id="staticBackdropLabel">Edit Employee</h1>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    Are you sure you want to secure password for this employee?
+                                    <br>
+                                    {{ employee.first_name }} {{ employee.last_name }}
+                                    <br>
+                                    <b>Personal Email:</b> {{ employee.personal_email }}
+                                    <br>
+                                    <b>Handle:</b> {{ employee.handle }}
+                                    <br>
+                                    <b>Plain Text Password:</b> {{ employee.password }}
+                                    <br>
+                                    Please, made sure you copy the <b>Plain Text Password</b> before click Yes!
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary"
+                                        data-bs-dismiss="modal">Close</button>
+                                    <button type="submit" form="secure_password_form"
+                                        class="btn btn-primary">Yes</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <br>
+
+                    <div class="button-container">
+
+
+                        {% if employee.onboarded %}
+                        <a class="btn btn-success disabled" data-bs-toggle="modal">Onboard</a>
+
+                        <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#secure-password-modal">Secure
+                            Password</a>
+
+
+                        {% else %}
+                        <a class="btn btn-success" data-bs-toggle="modal"
+                            data-bs-target="#onboard_staticBackdrop">Onboard</a>
+
+                        <a class="btn btn-primary disabled" data-bs-toggle="modal">Secure Password</a>
+
+
+                        {% endif %}
+                    </div>
+                    <br>
+                    <div class="button-container">
+                        <a href="/list/employees" class="btn btn-secondary">Cancel</a>
+
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+
+</body>
+
+{% endblock content %}

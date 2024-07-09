@@ -11,12 +11,12 @@ use log::debug;
 use uuid::Uuid;
 
 use crate::{
-    models::{
+    database::persistence::{list, save},
+    models::models::{
         Employee, EmployeeData, EmployeeErrorResponse, EmployeeListResponse, EmployeeRequestBody,
         QueryOptions, SimpleEmployeeResponse,
     },
-    persistence::{list, save},
-    utils::{generate_handle, generate_random_password},
+    utils::utils::{generate_handle, generate_random_password},
 };
 
 pub async fn health_checker() -> impl IntoResponse {

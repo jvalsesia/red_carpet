@@ -11,9 +11,11 @@ use tera::{Context, Tera};
 use uuid::Uuid;
 
 use crate::{
-    models::{Employee, EmployeeErrorResponse},
-    persistence::{delete, list, save, update},
-    utils::{generate_handle, generate_random_password, verify_hashed_password},
+    database::persistence::{delete, list, save, update},
+    models::models::{Employee, EmployeeErrorResponse},
+    utils::utils::{
+        generate_handle, generate_random_password, hash_password, verify_hashed_password,
+    },
 };
 
 type Templates = Arc<Tera>;
@@ -271,6 +273,35 @@ pub async fn handle_onboard_form_data(
 
     debug!("onboarding_employee ---> {:?}", onboarding_employee);
     let employees_map = update(employee.clone()).await;
+
+    sort_by_first_name(employees_map, context, templates).await
+}
+
+pub async fn secure_password(
+    Extension(templates): Extension<Templates>,
+    Form(employee): Form<Employee>,
+) -> impl IntoResponse {
+    let mut context = Context::new();
+    context.insert("title", "Edit Employee");
+    debug!("modified_employee_data.id ---> {:?}", employee.id);
+
+    let hashed_password = hash_password(employee.password.clone().unwrap()).await;
+
+    let modified_employee = Employee {
+        id: employee.id,
+        first_name: employee.first_name.clone(),
+        last_name: employee.last_name.clone(),
+        personal_email: employee.personal_email.clone(),
+        avaya_email: employee.avaya_email.clone(),
+        age: employee.age,
+        diploma: employee.diploma.clone(),
+        onboarded: employee.onboarded,
+        handle: employee.handle.clone(),
+        password: Some(hashed_password),
+    };
+
+    debug!("modified_employee ---> {modified_employee:?}");
+    let employees_map = update(modified_employee).await;
 
     sort_by_first_name(employees_map, context, templates).await
 }
