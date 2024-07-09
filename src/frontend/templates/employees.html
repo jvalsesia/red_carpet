@@ -35,6 +35,8 @@
                                 <th class="text-center" scope="col">Handle</th>
                                 <th class="text-center" scope="col">Personal Email</th> -->
                                 <th class="text-center" scope="col">Onboarded</th>
+                                <th class="text-center" scope="col">Secure Password</th>
+
                                 <th class="text-center" scope="col">Details</th>
 
                                 <th class="text-center" scope="col">Edit</th>
@@ -72,26 +74,46 @@
 
 
                             <tr>
-                                {% if employee.onboarded %}
+                                {% if employee.onboarded and employee.secure_password %}
                                 <td class="text-center" style="background-color: lightgreen;">{{employee.first_name}}
+                                </td>
+                                {% elif employee.onboarded %}
+                                <td class="text-center" style="background-color: yellow;">{{employee.first_name}}
                                 </td>
                                 {% else %}
                                 <td class="text-center" style="background-color: lightcoral;">{{employee.first_name}}
                                 </td>
                                 {% endif %}
-                                {% if employee.onboarded %}
+                                {% if employee.onboarded and employee.secure_password %}
                                 <td class="text-center" style="background-color: lightgreen;">{{employee.last_name}}
+                                </td>
+                                {% elif employee.onboarded %}
+                                <td class="text-center" style="background-color: yellow;">{{employee.last_name}}
                                 </td>
                                 {% else %}
                                 <td class="text-center" style="background-color: lightcoral;">{{employee.last_name}}
                                 </td>
                                 {% endif %}
 
-                                {% if employee.onboarded %}
+                                {% if employee.onboarded and employee.secure_password %}
                                 <td class="text-center" style="background-color: lightgreen;">{{employee.onboarded}}
+                                </td>
+                                {% elif employee.onboarded %}
+                                <td class="text-center" style="background-color: yellow;">{{employee.onboarded}}
                                 </td>
                                 {% else %}
                                 <td class="text-center" style="background-color: lightcoral;">{{employee.onboarded}}
+                                </td>
+                                {% endif %}
+
+                                {% if employee.onboarded and employee.secure_password %}
+                                <td class="text-center" style="background-color: lightgreen;">true
+                                </td>
+                                {% elif employee.onboarded %}
+                                <td class="text-center" style="background-color: yellow;">false
+                                </td>
+                                {% else %}
+                                <td class="text-center" style="background-color: lightcoral;">false
                                 </td>
                                 {% endif %}
                                 <td class="text-center">
@@ -117,9 +139,13 @@
                 </div>
                 <br>
                 <div class="text-center">
+                    <div class="vr"></div>
                     Onboarded : {{ employees| filter(attribute="onboarded", value=true) | length }}
                     <div class="vr"></div>
+                    Secure Password : {{ employees| filter(attribute="secure_password", value=true) | length }}
+                    <div class="vr"></div>
                     Offboarded: {{ employees| filter(attribute="onboarded", value=false) | length }}
+                    <div class="vr"></div>
                 </div>
                 <br>
                 <div class="button-container">

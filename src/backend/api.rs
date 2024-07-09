@@ -44,6 +44,7 @@ pub async fn create_employee(
         onboarded: Some(false),
         handle: None,
         password: None,
+        secure_password: Some(false),
     };
 
     let save_result = save(employee.clone()).await;
@@ -160,6 +161,7 @@ pub async fn generate_handle_and_password(Path(id): Path<String>) -> impl IntoRe
                 onboarded: Some(true),
                 handle: Some(new_handle),
                 password: Some(generate_random_password().await),
+                secure_password: Some(false),
             };
 
             let save_result = save(employee.clone()).await;

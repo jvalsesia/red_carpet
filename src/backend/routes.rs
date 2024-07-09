@@ -11,7 +11,7 @@ use crate::{
     frontend::handlers::{
         delete_employee, edit_employee, handle_edit_form_data, handle_onboard_form_data,
         handle_save_form_data, index, list_employees, new_employee_page, save_result_page,
-        select_employee, styles,
+        secure_password, select_employee, styles,
     },
 };
 
@@ -70,6 +70,7 @@ pub async fn define_routes(db: DB, mut tera: Tera) -> Router {
         .route("/edit/employee/:id", get(edit_employee))
         .route("/update/employee", post(handle_edit_form_data))
         .route("/onboard/employee", post(handle_onboard_form_data))
+        .route("/securepassword/employee", post(secure_password))
         .route("/new/employee", get(new_employee_page))
         .route("/save/employee", post(handle_save_form_data))
         .route("/save/success", get(save_result_page))

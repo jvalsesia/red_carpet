@@ -246,7 +246,7 @@
                                     <br>
                                     <b>Plain Text Password:</b> {{ employee.password }}
                                     <br>
-                                    Please, made sure you copy the <b>Plain Text Password</b> before click Yes!
+                                    Please, made sure you copy the <b>Plain Text Password</b> before click Yes button!
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-secondary"
@@ -260,23 +260,25 @@
                     <br>
 
                     <div class="button-container">
-
-
                         {% if employee.onboarded %}
-                        <a class="btn btn-success disabled" data-bs-toggle="modal">Onboard</a>
-
-                        <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#secure-password-modal">Secure
-                            Password</a>
-
-
+                        <a class="btn btn-success disabled" data-bs-toggle="modal">
+                            Onboard
+                        </a>
                         {% else %}
-                        <a class="btn btn-success" data-bs-toggle="modal"
-                            data-bs-target="#onboard_staticBackdrop">Onboard</a>
-
-                        <a class="btn btn-primary disabled" data-bs-toggle="modal">Secure Password</a>
-
-
+                        <a class="btn btn-success" data-bs-toggle="modal" data-bs-target="#onboard_staticBackdrop">
+                            Onboard
+                        </a>
                         {% endif %}
+                        {% if not employee.onboarded %}
+                        <a class="btn btn-primary disabled" data-bs-toggle="modal">
+                            Secure Password
+                        </a>
+                        {% else %}
+                        <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#secure-password-modal">
+                            Secure Password
+                        </a>
+                        {% endif %}
+
                     </div>
                     <br>
                     <div class="button-container">

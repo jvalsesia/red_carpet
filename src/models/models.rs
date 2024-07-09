@@ -14,6 +14,7 @@ pub struct Employee {
     pub onboarded: Option<bool>,
     pub handle: Option<String>,
     pub password: Option<String>,
+    pub secure_password: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

@@ -122,7 +122,7 @@ async fn filter_by_id(
 
             let employees_list: Vec<Employee> = filtered_employees.into_values().collect();
 
-            let employee = employees_list.first().unwrap();
+            let employee: &Employee = employees_list.first().unwrap();
             debug!("{employee:?}");
 
             context.insert("employee", &employee);
@@ -186,6 +186,7 @@ pub async fn handle_edit_form_data(
         onboarded: modified_employee_data.onboarded,
         handle: modified_employee_data.handle.clone(),
         password: modified_employee_data.password.clone(),
+        secure_password: modified_employee_data.secure_password.clone(),
     };
 
     debug!("modified_employee ---> {modified_employee:?}");
@@ -213,6 +214,7 @@ pub async fn handle_save_form_data(
         onboarded: Some(false),
         handle: None,
         password: None,
+        secure_password: Some(false),
     };
 
     debug!("new_employee ---> {new_employee:?}");
@@ -269,6 +271,7 @@ pub async fn handle_onboard_form_data(
         onboarded: Some(true),
         handle: Some(new_handle),
         password: Some(generate_random_password().await),
+        secure_password: Some(false),
     };
 
     debug!("onboarding_employee ---> {:?}", onboarding_employee);
@@ -283,10 +286,11 @@ pub async fn secure_password(
 ) -> impl IntoResponse {
     let mut context = Context::new();
     context.insert("title", "Edit Employee");
-    debug!("modified_employee_data.id ---> {:?}", employee.id);
+    warn!("employee.handle ---> {:?}", employee.handle);
+    warn!("employee.password ---> {:?}", employee.password);
 
     let hashed_password = hash_password(employee.password.clone().unwrap()).await;
-
+    warn!("hashed_password ---> {:?}", hashed_password);
     let modified_employee = Employee {
         id: employee.id,
         first_name: employee.first_name.clone(),
@@ -298,9 +302,9 @@ pub async fn secure_password(
         onboarded: employee.onboarded,
         handle: employee.handle.clone(),
         password: Some(hashed_password),
+        secure_password: Some(true),
     };
 
-    debug!("modified_employee ---> {modified_employee:?}");
     let employees_map = update(modified_employee).await;
 
     sort_by_first_name(employees_map, context, templates).await
