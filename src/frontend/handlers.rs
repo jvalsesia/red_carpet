@@ -35,13 +35,6 @@ pub async fn index(Extension(templates): Extension<Templates>) -> impl IntoRespo
     Html(templates.render("index.html", &context).unwrap())
 }
 
-pub async fn home(Extension(templates): Extension<Templates>) -> impl IntoResponse {
-    let mut context = Context::new();
-    context.insert("title", "Welcome to Avaya Red Carpet");
-
-    Html(templates.render("home.html", &context).unwrap())
-}
-
 pub async fn new_employee_page(Extension(templates): Extension<Templates>) -> impl IntoResponse {
     let mut context = Context::new();
     context.insert("title", "Personal Details");
@@ -200,9 +193,9 @@ pub async fn handle_save_form_data(
     Form(new_employee_data): Form<Employee>,
 ) -> impl IntoResponse {
     let mut context = Context::new();
-    context.insert("title", "Edit Employee");
+    context.insert("title", "Personal Data");
     let id = Some(Uuid::new_v4().to_string());
-    debug!("new_employee_data.id ---> {:?}", id);
+
     let new_employee = Employee {
         id,
         first_name: new_employee_data.first_name.clone(),
@@ -253,7 +246,7 @@ pub async fn handle_onboard_form_data(
     Form(onboarding_employee): Form<Employee>,
 ) -> impl IntoResponse {
     let mut context = Context::new();
-    context.insert("title", "Edit Employee");
+    context.insert("title", "Onboarding Employee");
     let new_handle = generate_handle(
         onboarding_employee.first_name.clone(),
         onboarding_employee.last_name.clone(),
@@ -285,7 +278,7 @@ pub async fn secure_password(
     Form(employee): Form<Employee>,
 ) -> impl IntoResponse {
     let mut context = Context::new();
-    context.insert("title", "Edit Employee");
+    context.insert("title", "Securing Password");
     warn!("employee.handle ---> {:?}", employee.handle);
     warn!("employee.password ---> {:?}", employee.password);
 
