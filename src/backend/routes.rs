@@ -50,6 +50,10 @@ pub async fn define_routes(db: DB, mut tera: Tera) -> Router {
             "delete_confirmation.html",
             include_str!("../frontend/templates/delete_confirmation.html"),
         ),
+        (
+            "errors.html",
+            include_str!("../frontend/templates/errors.html"),
+        ),
     ])
     .unwrap();
 

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+
+<body>
+    <div class="container d-flex min-vh-100 justify-content-center align-items-center">
+        <div class="row justify-content-center  shadow-lg p-3 mb-5 bg-body rounded">
+            {% if error_message %}
+            <h1> {{error_message.status}}</h1>
+            <div class="col-md-12">
+                <div class="table-responsive">
+                    <hr>
+                    <br>
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    {{error_message.description}}
+                    <br>
+                    <br>
+                    <hr>
+                    <div class="button-container">
+                        <a href="/" class="btn btn-primary">Ok</a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+</body>
+
+
+{% endblock %}

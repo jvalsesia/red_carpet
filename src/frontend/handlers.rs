@@ -35,6 +35,13 @@ pub async fn index(Extension(templates): Extension<Templates>) -> impl IntoRespo
     Html(templates.render("index.html", &context).unwrap())
 }
 
+pub async fn errors(Extension(templates): Extension<Templates>) -> impl IntoResponse {
+    let mut context = Context::new();
+    context.insert("title", "Error");
+
+    Html(templates.render("errors.html", &context).unwrap())
+}
+
 pub async fn new_employee_page(Extension(templates): Extension<Templates>) -> impl IntoResponse {
     let mut context = Context::new();
     context.insert("title", "Personal Details");
@@ -71,7 +78,7 @@ async fn sort_by_first_name(
                 description: error.to_string(),
             };
 
-            context.insert("error", &error_response);
+            context.insert("error_message", &error_response);
             Html(templates.render("index.html", &context).unwrap())
         }
     }
@@ -164,10 +171,7 @@ pub async fn handle_edit_form_data(
 ) -> impl IntoResponse {
     let mut context = Context::new();
     context.insert("title", "Edit Employee");
-    debug!(
-        "modified_employee_data.id ---> {:?}",
-        modified_employee_data.id
-    );
+
     let modified_employee = Employee {
         id: modified_employee_data.id,
         first_name: modified_employee_data.first_name.clone(),
@@ -221,22 +225,22 @@ pub async fn handle_save_form_data(
                 Html(templates.render("save_result.html", &context).unwrap())
             } else {
                 let warning_response = EmployeeErrorResponse {
-                    status: "warning".to_string(),
-                    description: "Employee already exists".to_string(),
+                    status: "Warning".to_string(),
+                    description: "Personal Data already exists!".to_string(),
                 };
                 warn!("{warning_response:?}");
-                context.insert("error", &warning_response);
-                Html(templates.render("index.html", &context).unwrap())
+                context.insert("error_message", &warning_response);
+                Html(templates.render("errors.html", &context).unwrap())
             }
         }
         Err(_) => {
             let error_response = EmployeeErrorResponse {
-                status: "error".to_string(),
+                status: "Error".to_string(),
                 description: "Employee already exists".to_string(),
             };
             error!("{error_response:?}");
-            context.insert("error", &error_response);
-            Html(templates.render("index.html", &context).unwrap())
+            context.insert("error_message", &error_response);
+            Html(templates.render("errors.html", &context).unwrap())
         }
     }
 }
