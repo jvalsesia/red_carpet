@@ -5,21 +5,21 @@ use axum::{
     Extension, Router,
 };
 use tera::Tera;
+use tokio::sync::Mutex;
 
 use crate::{
-    database::database::DB,
     frontend::handlers::{
         delete_employee, edit_employee, handle_edit_form_data, handle_onboard_form_data,
         handle_save_form_data, index, list_employees, new_employee_page, save_result_page,
         secure_password, select_employee, styles,
-    },
+    }, utils::state::LoggedInState,
 };
 
 use super::api::{
     create_employee, employees_list, generate_handle_and_password, get_employee, health_checker,
 };
 
-pub async fn define_routes(db: DB, mut tera: Tera) -> Router {
+pub async fn define_routes(logged_in_state: Arc<Mutex<LoggedInState>>, mut tera: Tera) -> Router {
     tera.add_raw_templates(vec![
         ("base.html", include_str!("../frontend/templates/base.html")),
         (
@@ -59,6 +59,7 @@ pub async fn define_routes(db: DB, mut tera: Tera) -> Router {
 
     // build our application with a route
     Router::new()
+
         .route("/api/v1/healthchecker", get(health_checker))
         .route(
             "/api/v1/employees",
@@ -80,6 +81,7 @@ pub async fn define_routes(db: DB, mut tera: Tera) -> Router {
         .route("/save/success", get(save_result_page))
         .route("/delete/employee/:id", get(delete_employee))
         .route("/select/employee/:id", get(select_employee))
+        // .layer(axum_auth::middleware::auth_wrapper(Store::new(), AuthConfig::default()));
         .layer(Extension(Arc::new(tera)))
-        .with_state(db)
+        .with_state(logged_in_state)
 }

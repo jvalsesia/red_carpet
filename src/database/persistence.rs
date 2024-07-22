@@ -145,3 +145,17 @@ pub async fn check_employee_exists(first_name: String, last_name: String) -> Res
 
     Ok(employee_exists)
 }
+
+pub async fn get_employee_by_handle(handle: String) -> Result<Employee> {
+    let employee_file_path = Path::new(DATA_FILE);
+    let data = fs::read_to_string(employee_file_path).expect("Unable to read file");
+    let map_employees: HashMap<String, Employee> = serde_json::from_str(&data)?;
+
+    let employee = map_employees
+        .values()
+        .find(|employee| employee.handle == Some(handle.clone()))
+        .unwrap()
+        .clone();
+
+    Ok(employee)
+}

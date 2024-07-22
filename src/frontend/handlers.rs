@@ -2,20 +2,22 @@ use std::{collections::HashMap, sync::Arc};
 
 use axum::{
     extract::Path,
-    http::{self, Response},
+    http::{self, Response, StatusCode},
     response::{Html, IntoResponse},
     Extension, Form,
 };
+use axum_auth::AuthBasic;
 use log::{debug, error, warn};
 use tera::{Context, Tera};
+use tokio::sync::Mutex;
 use uuid::Uuid;
 
 use crate::{
-    database::persistence::{delete, list, save, update},
+    database::persistence::{delete, get_employee_by_handle, list, save, update},
     models::models::{Employee, EmployeeErrorResponse},
-    utils::utils::{
+    utils::{state::{LoggedInState, User}, utils::{
         generate_handle, generate_random_password, hash_password, verify_hashed_password,
-    },
+    }},
 };
 
 type Templates = Arc<Tera>;
@@ -55,6 +57,8 @@ pub async fn save_result_page(Extension(templates): Extension<Templates>) -> imp
 
     Html(templates.render("save_result.html", &context).unwrap())
 }
+
+
 
 async fn sort_by_first_name(
     employees_map: Result<HashMap<String, Employee>, std::io::Error>,
@@ -307,25 +311,54 @@ pub async fn secure_password(
     sort_by_first_name(employees_map, context, templates).await
 }
 
-pub async fn verify_password(
-    Extension(templates): Extension<Templates>,
+async fn verify_password(
+    handle: String,
     password: String,
-    hashed_password: String,
-) -> impl IntoResponse {
+) -> LoggedInState {
     let mut context = Context::new();
     context.insert("title", "Edit Employee");
 
-    let password_verified = verify_hashed_password(password.clone(), hashed_password.clone()).await;
+    let employee_by_handle = get_employee_by_handle(handle.clone()).await;
 
-    if password == hashed_password {
-        Html(templates.render("onboard.html", &context).unwrap())
+    match employee_by_handle {
+        Ok(employee) => {
+            let hashed_password = employee.password.unwrap();
+            let password_verified = verify_hashed_password(password.clone(), hashed_password).await;
+            if password_verified {
+                let user = Some(User {
+                    handle: handle.clone(),
+                    password: password,
+                });
+                return LoggedInState { user };
+            } else {
+                return LoggedInState { user: None };
+            }
+    
+        }
+        Err(_) => {
+            let error_response = EmployeeErrorResponse {
+                status: "Error".to_string(),
+                description: "Employee already exists".to_string(),
+            };
+            error!("{error_response:?}");
+           
+            return LoggedInState { user: None };
+        }
+    }
+}
+
+pub async fn basic_auth_handler(
+    AuthBasic((handle, password)): AuthBasic,
+    Extension(state): Extension<Arc<Mutex<LoggedInState>>>,
+    Extension(templates): Extension<Templates>,
+) -> impl IntoResponse {
+    let mut logged_in_state = state.lock().await;
+    *logged_in_state = verify_password(handle.clone(), password.unwrap()).await;
+
+    // Example validation: Check if the username is "admin" and the password matches the state's secret_key
+    if handle == "admin" && password == Some(state.user.as_ref().unwrap().password.clone()) {
+        "You are authenticated".into_response()
     } else {
-        let error_response = EmployeeErrorResponse {
-            status: "error".to_string(),
-            description: "Invalid password".to_string(),
-        };
-        error!("{error_response:?}");
-        context.insert("error", &error_response);
-        Html(templates.render("index.html", &context).unwrap())
+        (StatusCode::UNAUTHORIZED, "Invalid credentials").into_response()
     }
 }
