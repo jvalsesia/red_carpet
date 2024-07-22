@@ -1,23 +1,21 @@
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
 use axum::{
-    extract::Path,
-    http::{self, Response, StatusCode},
+    extract::{Path, Query},
+    http::{self, Response},
     response::{Html, IntoResponse},
-    Extension, Form,
+    Extension, Form, Json,
 };
-use axum_auth::AuthBasic;
 use log::{debug, error, warn};
+
 use tera::{Context, Tera};
-use tokio::sync::Mutex;
-use uuid::Uuid;
 
 use crate::{
-    database::persistence::{delete, get_employee_by_handle, list, save, update},
-    models::models::{Employee, EmployeeErrorResponse},
-    utils::{state::{LoggedInState, User}, utils::{
-        generate_handle, generate_random_password, hash_password, verify_hashed_password,
-    }},
+    backend::api::{
+        create_employee, delete_employee_by_id, employees_list, get_employee, update_employee,
+    },
+    models::employee_models::{Employee, EmployeeErrorResponse, EmployeeRequestBody, QueryOptions},
+    utils::password_utils::{generate_handle, generate_random_password, hash_password},
 };
 
 type Templates = Arc<Tera>;
@@ -58,43 +56,34 @@ pub async fn save_result_page(Extension(templates): Extension<Templates>) -> imp
     Html(templates.render("save_result.html", &context).unwrap())
 }
 
-
-
-async fn sort_by_first_name(
-    employees_map: Result<HashMap<String, Employee>, std::io::Error>,
-    mut context: Context,
-    templates: Arc<Tera>,
-) -> Html<String> {
-    match employees_map {
-        Ok(employees) => {
-            let mut employees_list: Vec<Employee> = employees.into_values().collect();
-            employees_list.sort_by(|x, y| x.first_name.cmp(&y.first_name));
-            debug!("{employees_list:?}");
-
-            context.insert("employees", &employees_list);
-
-            Html(templates.render("employees.html", &context).unwrap())
-        }
-        Err(error) => {
-            debug!("{error:?}");
-            let error_response = EmployeeErrorResponse {
-                status: "error".to_string(),
-                description: error.to_string(),
-            };
-
-            context.insert("error_message", &error_response);
-            Html(templates.render("index.html", &context).unwrap())
-        }
-    }
-}
-
 pub async fn list_employees(Extension(templates): Extension<Templates>) -> impl IntoResponse {
     let mut context = Context::new();
     context.insert("title", "List Employees");
     context.insert("selected_id", "");
 
-    let employees_map = list().await;
-    sort_by_first_name(employees_map, context, templates).await
+    let query_options = QueryOptions {
+        page: Some(1),
+        limit: Some(1000),
+    };
+    let opts: Option<Query<QueryOptions>> = Some(Query(query_options));
+
+    let employees_map = employees_list(opts).await;
+    match employees_map {
+        Ok(result) => {
+            let employees = result.0.employees;
+            context.insert("employees", &employees);
+            Html(templates.render("employees.html", &context).unwrap())
+        }
+        Err(_) => {
+            let error_response = EmployeeErrorResponse {
+                error: "Error fetching employees".to_string(),
+            };
+            error!("{error_response:?}");
+            context.insert("error_message", &error_response);
+            Html(templates.render("errors.html", &context).unwrap())
+        }
+    }
+    // sort_by_first_name(employees_map, context, templates).await
 }
 
 pub async fn edit_employee(
@@ -104,44 +93,21 @@ pub async fn edit_employee(
     let mut context = Context::new();
     context.insert("title", "Employee");
 
-    let employees_map = list().await;
-
-    filter_by_id(employees_map, id, "edit_form.html", context, templates).await
-}
-
-async fn filter_by_id(
-    employees_map: Result<HashMap<String, Employee>, std::io::Error>,
-    id: String,
-    tempate_name: &str,
-    mut context: Context,
-    templates: Arc<Tera>,
-) -> Html<String> {
-    match employees_map {
-        Ok(employees) => {
-            // list not onboarded employees
-            let filtered_employees: HashMap<String, Employee> = employees
-                .into_iter()
-                .filter(|(_id, employee)| employee.id == Some(id.clone()))
-                .collect();
-
-            let employees_list: Vec<Employee> = filtered_employees.into_values().collect();
-
-            let employee: &Employee = employees_list.first().unwrap();
-            debug!("{employee:?}");
-
+    let path: Path<String> = Path(id.clone());
+    let result = get_employee(path).await;
+    match result {
+        Ok(employee_response) => {
+            let employee = employee_response.0.data;
             context.insert("employee", &employee);
-
-            Html(templates.render(tempate_name, &context).unwrap())
+            Html(templates.render("edit_form.html", &context).unwrap())
         }
-        Err(error) => {
-            debug!("{error:?}");
+        Err(_) => {
             let error_response = EmployeeErrorResponse {
-                status: "error".to_string(),
-                description: error.to_string(),
+                error: "Employee not found".to_string(),
             };
-
-            context.insert("error", &error_response);
-            Html(templates.render("index.html", &context).unwrap())
+            error!("{error_response:?}");
+            context.insert("error_message", &error_response);
+            Html(templates.render("errors.html", &context).unwrap())
         }
     }
 }
@@ -153,9 +119,23 @@ pub async fn delete_employee(
     let mut context = Context::new();
     context.insert("title", "Edit Employee");
 
-    let employees_map = delete(id).await;
-
-    sort_by_first_name(employees_map, context, templates).await
+    let path: Path<String> = Path(id.clone());
+    let result = delete_employee_by_id(path).await;
+    match result {
+        Ok(result) => {
+            let employees = result.0.employees;
+            context.insert("employees", &employees);
+            Html(templates.render("employees.html", &context).unwrap())
+        }
+        Err(_) => {
+            let error_response = EmployeeErrorResponse {
+                error: "Error fetching employees".to_string(),
+            };
+            error!("{error_response:?}");
+            context.insert("error_message", &error_response);
+            Html(templates.render("errors.html", &context).unwrap())
+        }
+    }
 }
 
 pub async fn select_employee(
@@ -165,8 +145,23 @@ pub async fn select_employee(
     let mut context = Context::new();
     context.insert("title", "Employee");
 
-    let employees_map = list().await;
-    filter_by_id(employees_map, id, "employee.html", context, templates).await
+    let path: Path<String> = Path(id.clone());
+    let result = get_employee(path).await;
+    match result {
+        Ok(employee_response) => {
+            let employee = employee_response.0.data;
+            context.insert("employee", &employee);
+            Html(templates.render("employee.html", &context).unwrap())
+        }
+        Err(_) => {
+            let error_response = EmployeeErrorResponse {
+                error: "Employee not found".to_string(),
+            };
+            error!("{error_response:?}");
+            context.insert("error_message", &error_response);
+            Html(templates.render("errors.html", &context).unwrap())
+        }
+    }
 }
 
 pub async fn handle_edit_form_data(
@@ -175,25 +170,22 @@ pub async fn handle_edit_form_data(
 ) -> impl IntoResponse {
     let mut context = Context::new();
     context.insert("title", "Edit Employee");
-
-    let modified_employee = Employee {
-        id: modified_employee_data.id,
-        first_name: modified_employee_data.first_name.clone(),
-        last_name: modified_employee_data.last_name.clone(),
-        personal_email: modified_employee_data.personal_email.clone(),
-        avaya_email: modified_employee_data.avaya_email.clone(),
-        age: modified_employee_data.age,
-        diploma: modified_employee_data.diploma.clone(),
-        onboarded: modified_employee_data.onboarded,
-        handle: modified_employee_data.handle.clone(),
-        password: modified_employee_data.password.clone(),
-        secure_password: modified_employee_data.secure_password.clone(),
-    };
-
-    debug!("modified_employee ---> {modified_employee:?}");
-    let employees_map = update(modified_employee).await;
-
-    sort_by_first_name(employees_map, context, templates).await
+    let result = update_employee(Json(modified_employee_data)).await;
+    match result {
+        Ok(result) => {
+            let employees = result.0.employees;
+            context.insert("employees", &employees);
+            Html(templates.render("employees.html", &context).unwrap())
+        }
+        Err(_) => {
+            let error_response = EmployeeErrorResponse {
+                error: "Error updating employee".to_string(),
+            };
+            error!("{error_response:?}");
+            context.insert("error_message", &error_response);
+            Html(templates.render("errors.html", &context).unwrap())
+        }
+    }
 }
 
 pub async fn handle_save_form_data(
@@ -202,48 +194,30 @@ pub async fn handle_save_form_data(
 ) -> impl IntoResponse {
     let mut context = Context::new();
     context.insert("title", "Personal Data");
-    let id = Some(Uuid::new_v4().to_string());
 
-    let new_employee = Employee {
-        id,
+    let new_employee = EmployeeRequestBody {
         first_name: new_employee_data.first_name.clone(),
         last_name: new_employee_data.last_name.clone(),
         personal_email: new_employee_data.personal_email.clone(),
-        avaya_email: new_employee_data.avaya_email.clone(),
         age: new_employee_data.age,
         diploma: new_employee_data.diploma.clone(),
-        onboarded: Some(false),
-        handle: None,
-        password: None,
-        secure_password: Some(false),
     };
 
-    debug!("new_employee ---> {new_employee:?}");
-    let save_result = save(new_employee.clone()).await;
-
-    match save_result {
+    let create_result = create_employee(Json(new_employee)).await;
+    match create_result {
         Ok(result) => {
-            if result {
-                context.insert("employee", &new_employee);
-
-                Html(templates.render("save_result.html", &context).unwrap())
-            } else {
-                let warning_response = EmployeeErrorResponse {
-                    status: "Warning".to_string(),
-                    description: "Personal Data already exists!".to_string(),
-                };
-                warn!("{warning_response:?}");
-                context.insert("error_message", &warning_response);
-                Html(templates.render("errors.html", &context).unwrap())
-            }
+            let employee_response = result.0;
+            let new_employee = employee_response.data;
+            context.insert("employee", &new_employee);
+            debug!("new_employee ---> {new_employee:?}");
+            Html(templates.render("save_result.html", &context).unwrap())
         }
         Err(_) => {
-            let error_response = EmployeeErrorResponse {
-                status: "Error".to_string(),
-                description: "Employee already exists".to_string(),
+            let warning_response = EmployeeErrorResponse {
+                error: "Personal Data already exists!".to_string(),
             };
-            error!("{error_response:?}");
-            context.insert("error_message", &error_response);
+            warn!("{warning_response:?}");
+            context.insert("error_message", &warning_response);
             Html(templates.render("errors.html", &context).unwrap())
         }
     }
@@ -275,10 +249,22 @@ pub async fn handle_onboard_form_data(
         secure_password: Some(false),
     };
 
-    debug!("onboarding_employee ---> {:?}", onboarding_employee);
-    let employees_map = update(employee.clone()).await;
-
-    sort_by_first_name(employees_map, context, templates).await
+    let result = update_employee(Json(employee)).await;
+    match result {
+        Ok(result) => {
+            let employees = result.0.employees;
+            context.insert("employees", &employees);
+            Html(templates.render("employees.html", &context).unwrap())
+        }
+        Err(_) => {
+            let error_response = EmployeeErrorResponse {
+                error: "Error updating employee".to_string(),
+            };
+            error!("{error_response:?}");
+            context.insert("error_message", &error_response);
+            Html(templates.render("errors.html", &context).unwrap())
+        }
+    }
 }
 
 pub async fn secure_password(
@@ -306,59 +292,63 @@ pub async fn secure_password(
         secure_password: Some(true),
     };
 
-    let employees_map = update(modified_employee).await;
-
-    sort_by_first_name(employees_map, context, templates).await
-}
-
-async fn verify_password(
-    handle: String,
-    password: String,
-) -> LoggedInState {
-    let mut context = Context::new();
-    context.insert("title", "Edit Employee");
-
-    let employee_by_handle = get_employee_by_handle(handle.clone()).await;
-
-    match employee_by_handle {
-        Ok(employee) => {
-            let hashed_password = employee.password.unwrap();
-            let password_verified = verify_hashed_password(password.clone(), hashed_password).await;
-            if password_verified {
-                let user = Some(User {
-                    handle: handle.clone(),
-                    password: password,
-                });
-                return LoggedInState { user };
-            } else {
-                return LoggedInState { user: None };
-            }
-    
+    let result = update_employee(Json(modified_employee)).await;
+    match result {
+        Ok(result) => {
+            let employees = result.0.employees;
+            context.insert("employees", &employees);
+            Html(templates.render("employees.html", &context).unwrap())
         }
         Err(_) => {
             let error_response = EmployeeErrorResponse {
-                status: "Error".to_string(),
-                description: "Employee already exists".to_string(),
+                error: "Error updating employee".to_string(),
             };
             error!("{error_response:?}");
-           
-            return LoggedInState { user: None };
+            context.insert("error_message", &error_response);
+            Html(templates.render("errors.html", &context).unwrap())
         }
     }
 }
 
-pub async fn basic_auth_handler(
-    AuthBasic((handle, password)): AuthBasic,
-    Extension(state): Extension<Arc<Mutex<LoggedInState>>>,
-    Extension(templates): Extension<Templates>,
-) -> impl IntoResponse {
-    let mut logged_in_state = state.lock().await;
-    *logged_in_state = verify_password(handle.clone(), password.unwrap()).await;
+// async fn verify_password(handle: String, password: String) -> LoggedInState {
+//     let mut context = Context::new();
+//     context.insert("title", "Edit Employee");
 
-    // Example validation: Check if the username is "admin" and the password matches the state's secret_key
-    if handle == "admin" && password == Some(state.user.as_ref().unwrap().password.clone()) {
-        "You are authenticated".into_response()
-    } else {
-        (StatusCode::UNAUTHORIZED, "Invalid credentials").into_response()
-    }
-}
+//     let path: Path<String> = Path(handle.clone());
+//     let employee_by_handle = get_employee_by_handle_2(path).await;
+
+//     match employee_by_handle {
+//         Ok(employee_response) => {
+//             let employee = employee_response.0.data;
+//             let hashed_password = employee.password.unwrap();
+//             let is_valid = verify_hashed_password(password, hashed_password.clone()).await;
+//             if is_valid {
+//                 LoggedInState {
+//                     user: Some(User {
+//                         handle: employee.handle.unwrap(),
+//                         password: hashed_password,
+//                     }),
+//                 }
+//             } else {
+//                 LoggedInState { user: None }
+//             }
+//         }
+//         Err(_) => LoggedInState { user: None },
+//     }
+// }
+
+// pub async fn basic_auth_handler(
+//     AuthBasic((handle, password)): AuthBasic,
+//     Extension(state): Extension<Arc<Mutex<LoggedInState>>>,
+//     Extension(templates): Extension<Templates>,
+// ) -> impl IntoResponse {
+//     let mut logged_in_state = state.lock().await;
+//     *logged_in_state = verify_password(handle.clone(), password.unwrap()).await;
+
+//     // Example validation: Check if the username is "admin" and the password matches the state's secret_key
+//     if handle == "admin" && password == Some(state.lock().await.user.as_ref().unwrap().password.clone()) {
+//         "You are authenticated".into_response()
+//     } else {
+//         (StatusCode::UNAUTHORIZED, "Invalid credentials").into_response()
+//     }
+// }

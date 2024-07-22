@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use tokio::sync::Mutex;
 
-use crate::models::models::Employee;
+use crate::models::employee_models::Employee;
 
 pub type DB = Arc<Mutex<Vec<Employee>>>;
 

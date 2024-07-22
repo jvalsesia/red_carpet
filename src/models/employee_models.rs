@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -31,17 +29,17 @@ pub struct EmployeeData {
     pub employee: Employee,
 }
 
-#[derive(Serialize, Debug)]
-pub struct SimpleEmployeeResponse {
-    pub status: String,
-    pub data: EmployeeData,
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct EmployeeResponse {
+    pub message: String,
+    pub data: Employee,
 }
 
 #[derive(Serialize, Debug)]
 pub struct EmployeeListResponse {
-    pub status: String,
+    pub message: String,
     pub results: usize,
-    pub employees: HashMap<String, Employee>,
+    pub employees: Vec<Employee>,
 }
 
 #[allow(non_snake_case)]
@@ -60,6 +58,5 @@ pub struct QueryOptions {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct EmployeeErrorResponse {
-    pub status: String,
-    pub description: String,
+    pub error: String,
 }

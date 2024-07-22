@@ -1,3 +1,3 @@
 pub mod errors;
-pub mod utils;
+pub mod password_utils;
 pub mod state;

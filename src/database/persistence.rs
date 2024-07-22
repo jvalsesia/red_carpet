@@ -7,7 +7,7 @@ use std::{
     path::Path,
 };
 
-use crate::models::models::Employee;
+use crate::models::employee_models::Employee;
 
 const DATA_DIR: &str = "data";
 const DATA_FILE: &str = "data/employees.json";
@@ -70,7 +70,6 @@ pub async fn update(modified_employee: Employee) -> Result<HashMap<String, Emplo
     debug!("modified_employee: {modified_employee:?}");
     //let mut employees: Vec<Employee> = Vec::new();
     if fs::metadata(employee_file_path).unwrap().len() != 0 {
-        //  employees = serde_json::from_str(&data)?;
         map_employees = serde_json::from_str(&data)?;
     }
 

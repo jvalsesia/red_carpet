@@ -11,12 +11,12 @@ use log::debug;
 use uuid::Uuid;
 
 use crate::{
-    database::persistence::{list, save},
-    models::models::{
-        Employee, EmployeeData, EmployeeErrorResponse, EmployeeListResponse, EmployeeRequestBody,
-        QueryOptions, SimpleEmployeeResponse,
+    database::persistence::{delete, get_employee_by_handle, list, save, update},
+    models::employee_models::{
+        Employee, EmployeeErrorResponse, EmployeeListResponse, EmployeeRequestBody,
+        EmployeeResponse, QueryOptions,
     },
-    utils::utils::{generate_handle, generate_random_password},
+    utils::password_utils::{generate_handle, generate_random_password},
 };
 
 pub async fn health_checker() -> impl IntoResponse {
@@ -30,9 +30,63 @@ pub async fn health_checker() -> impl IntoResponse {
     Json(json_response)
 }
 
+pub async fn delete_employee_by_id(
+    Path(id): Path<String>,
+) -> Result<Json<EmployeeListResponse>, (StatusCode, Json<EmployeeErrorResponse>)> {
+    let employees_map = delete(id.clone()).await;
+    match employees_map {
+        Ok(employees) => {
+            let json_response = EmployeeListResponse {
+                message: format!("Employee {id:?} deleted successfully"),
+                results: employees.len(),
+                employees: employees.values().cloned().collect(),
+            };
+            debug!("{json_response:?}");
+            Ok(Json(json_response))
+        }
+        Err(error) => {
+            debug!("{error:?}");
+            let error_response = EmployeeErrorResponse {
+                error: error.to_string(),
+            };
+            Err((StatusCode::NOT_MODIFIED, Json(error_response)))
+        }
+    }
+}
+
+pub async fn update_employee(
+    Json(body): Json<Employee>,
+) -> Result<Json<EmployeeListResponse>, (StatusCode, Json<EmployeeErrorResponse>)> {
+    let employee = body.clone();
+    let employees_map = update(employee).await;
+    match employees_map {
+        Ok(employees) => {
+            let id = body.id.clone().unwrap();
+            let mut vec_employees: Vec<Employee> = employees.values().cloned().collect();
+            vec_employees.sort_by(|x, y| x.first_name.cmp(&y.first_name));
+
+            let json_response = EmployeeListResponse {
+                message: format!("Employee {id:?} updated successfully"),
+                results: employees.len(),
+                employees: vec_employees,
+            };
+
+            debug!("{json_response:?}");
+            Ok(Json(json_response))
+        }
+        Err(error) => {
+            debug!("{error:?}");
+            let error_response = EmployeeErrorResponse {
+                error: error.to_string(),
+            };
+            Err((StatusCode::NOT_MODIFIED, Json(error_response)))
+        }
+    }
+}
+
 pub async fn create_employee(
     Json(body): Json<EmployeeRequestBody>,
-) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+) -> Result<Json<EmployeeResponse>, (StatusCode, Json<EmployeeErrorResponse>)> {
     let employee = Employee {
         id: Some(Uuid::new_v4().to_string()),
         first_name: body.first_name,
@@ -46,28 +100,29 @@ pub async fn create_employee(
         password: None,
         secure_password: Some(false),
     };
-
     let save_result = save(employee.clone()).await;
     match save_result {
         Ok(_) => {
-            let json_response = SimpleEmployeeResponse {
-                status: "success".to_string(),
-                data: EmployeeData { employee },
+            let json_response = EmployeeResponse {
+                message: "Employee created successfully".to_string(),
+                data: employee,
             };
-            Ok((StatusCode::CREATED, Json(json_response)))
+            debug!("{json_response:?}");
+            Ok(Json(json_response))
         }
         Err(error) => {
             debug!("{error:?}");
-            let json_response = SimpleEmployeeResponse {
-                status: "error".to_string(),
-                data: EmployeeData { employee },
+            let error_response = EmployeeErrorResponse {
+                error: error.to_string(),
             };
-            Ok((StatusCode::NOT_MODIFIED, Json(json_response)))
+            Err((StatusCode::NOT_MODIFIED, Json(error_response)))
         }
     }
 }
 
-pub async fn employees_list(opts: Option<Query<QueryOptions>>) -> impl IntoResponse {
+pub async fn employees_list(
+    opts: Option<Query<QueryOptions>>,
+) -> Result<Json<EmployeeListResponse>, (StatusCode, Json<EmployeeErrorResponse>)> {
     let Query(opts) = opts.unwrap_or_default();
 
     let limit = opts.limit.unwrap_or(10);
@@ -81,31 +136,33 @@ pub async fn employees_list(opts: Option<Query<QueryOptions>>) -> impl IntoRespo
                 .into_iter()
                 .skip(offset)
                 .take(limit)
-                .filter(|(_id, employee)| employee.onboarded == Some(false))
+                // .filter(|(_id, employee)| employee.onboarded == Some(false))
                 .collect();
 
+            let mut vec_employees: Vec<Employee> = filtered_employees.values().cloned().collect();
+            vec_employees.sort_by(|x, y| x.first_name.cmp(&y.first_name));
+
             let json_response = EmployeeListResponse {
-                status: "success".to_string(),
+                message: "Employees list".to_string(),
                 results: filtered_employees.len(),
-                employees: filtered_employees.clone(),
+                employees: vec_employees,
             };
             debug!("{json_response:?}");
-            Ok((StatusCode::OK, Json(json_response)))
+            Ok(Json(json_response))
         }
         Err(error) => {
             debug!("{error:?}");
             let error_response = EmployeeErrorResponse {
-                status: "error".to_string(),
-                description: error.to_string(),
+                error: error.to_string(),
             };
             Err((StatusCode::NOT_MODIFIED, Json(error_response)))
         }
     }
 }
 
-pub async fn get_employee(Path(id): Path<String>) -> impl IntoResponse {
-    //let vec = db.lock().await;
-
+pub async fn get_employee(
+    Path(id): Path<String>,
+) -> Result<Json<EmployeeResponse>, (StatusCode, Json<EmployeeErrorResponse>)> {
     let employees_list = list().await;
 
     match employees_list {
@@ -116,25 +173,46 @@ pub async fn get_employee(Path(id): Path<String>) -> impl IntoResponse {
                 .filter(|(_id, employee)| employee.id == Some(id.clone()))
                 .collect();
 
-            let json_response = EmployeeListResponse {
-                status: "success".to_string(),
-                results: filtered_employees.len(),
-                employees: filtered_employees.clone(),
+            let json_response = EmployeeResponse {
+                message: "Employee found".to_string(),
+                data: filtered_employees.get(&id).unwrap().clone(),
             };
             debug!("{json_response:?}");
-            Ok((StatusCode::OK, Json(json_response)))
+            Ok(Json(json_response))
         }
         Err(error) => {
             debug!("{error:?}");
             let error_response = EmployeeErrorResponse {
-                status: "error".to_string(),
-                description: error.to_string(),
+                error: error.to_string(),
             };
             Err((StatusCode::NOT_MODIFIED, Json(error_response)))
         }
     }
 }
 
+pub async fn get_employee_by_handle_2(
+    Path(handle): Path<String>,
+) -> Result<Json<EmployeeResponse>, (StatusCode, Json<EmployeeErrorResponse>)> {
+    let employee_by_handle = get_employee_by_handle(handle.clone()).await;
+
+    match employee_by_handle {
+        Ok(employee) => {
+            let json_response = EmployeeResponse {
+                message: "Employee found".to_string(),
+                data: employee,
+            };
+            debug!("{json_response:?}");
+            Ok(Json(json_response))
+        }
+        Err(error) => {
+            debug!("{error:?}");
+            let error_response = EmployeeErrorResponse {
+                error: error.to_string(),
+            };
+            Err((StatusCode::NOT_MODIFIED, Json(error_response)))
+        }
+    }
+}
 pub async fn generate_handle_and_password(Path(id): Path<String>) -> impl IntoResponse {
     let employees_list = list().await;
 
@@ -167,30 +245,26 @@ pub async fn generate_handle_and_password(Path(id): Path<String>) -> impl IntoRe
             let save_result = save(employee.clone()).await;
             match save_result {
                 Ok(_) => {
-                    let json_response = SimpleEmployeeResponse {
-                        status: "success".to_string(),
-                        data: EmployeeData {
-                            employee: employee.clone(),
-                        },
+                    let json_response = EmployeeResponse {
+                        message: "Employee onboarded successfully".to_string(),
+                        data: employee,
                     };
                     debug!("{json_response:?}");
                     Ok((StatusCode::OK, Json(json_response)))
                 }
                 Err(error) => {
                     debug!("{error:?}");
-                    let json_response = SimpleEmployeeResponse {
-                        status: "error".to_string(),
-                        data: EmployeeData { employee },
+                    let json_response = EmployeeErrorResponse {
+                        error: error.to_string(),
                     };
-                    Ok((StatusCode::NOT_MODIFIED, Json(json_response)))
+                    Err((StatusCode::NOT_MODIFIED, Json(json_response)))
                 }
             }
         }
         Err(error) => {
             debug!("{error:?}");
             let error_response = EmployeeErrorResponse {
-                status: "error".to_string(),
-                description: error.to_string(),
+                error: error.to_string(),
             };
             Err((StatusCode::NOT_MODIFIED, Json(error_response)))
         }
