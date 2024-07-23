@@ -1,9 +1,11 @@
+use std::time::{SystemTime, UNIX_EPOCH};
+
 use log::warn;
 use pbkdf2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Pbkdf2,
 };
-use rand::seq::SliceRandom;
+use rand::{distributions::Alphanumeric, seq::SliceRandom, Rng};
 
 pub const LOWER_CASE: &str = "abcdefghijklmnopqrstuvxyz";
 pub const UPPER_CASE: &str = "ABCDEFGHIJKLMNOPQRSTUVXYZ";
@@ -56,4 +58,29 @@ pub async fn verify_hashed_password(password: String, hashed_password: String) -
     Pbkdf2
         .verify_password(password.as_bytes(), &parsed_hash)
         .is_ok()
+}
+
+pub async fn generate_session_token(id: String) -> String {
+    // Generate a unique session token
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    let random_string: String = rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(30)
+        .map(char::from)
+        .collect();
+    format!("{}:{}:{}", id, timestamp, random_string)
+}
+
+pub async fn validate_token_expiration(token: String) -> bool {
+    let parts: Vec<&str> = token.split(':').collect();
+    let timestamp = parts[1].parse::<u64>().unwrap();
+    let current_timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    let elapsed_time = current_timestamp - timestamp;
+    elapsed_time < 3600
 }

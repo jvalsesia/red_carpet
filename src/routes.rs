@@ -4,62 +4,59 @@ use axum::{
     routing::{any, get, post},
     Extension, Router,
 };
+
 use tera::Tera;
-use tokio::sync::Mutex;
 
 use crate::{
-    frontend::handlers::{
-        delete_employee, edit_employee, handle_edit_form_data, handle_onboard_form_data,
-        handle_save_form_data, index, list_employees, new_employee_page, save_result_page,
-        secure_password, select_employee, styles,
-    }, utils::state::LoggedInState,
+    handlers::{
+        basic_auth, create_employee, delete_employee, edit_employee, employees_list,
+        generate_handle_and_password, get_employee, handle_edit_form_data,
+        handle_onboard_form_data, handle_save_form_data, health_checker, index, list_employees,
+        new_employee_page, save_result_page, secure_password, select_employee, styles,
+    },
+    utils::state::AppState,
 };
 
-use super::api::{
-    create_employee, employees_list, generate_handle_and_password, get_employee, health_checker,
-};
-
-pub async fn define_routes(logged_in_state: Arc<Mutex<LoggedInState>>, mut tera: Tera) -> Router {
+pub async fn define_routes(shared_state: Arc<AppState>, mut tera: Tera) -> Router {
     tera.add_raw_templates(vec![
-        ("base.html", include_str!("../frontend/templates/base.html")),
+        ("base.html", include_str!("./frontend/templates/base.html")),
         (
             "index.html",
-            include_str!("../frontend/templates/index.html"),
+            include_str!("./frontend/templates/index.html"),
         ),
         (
             "employee.html",
-            include_str!("../frontend/templates/employee.html"),
+            include_str!("./frontend/templates/employee.html"),
         ),
         (
             "employees.html",
-            include_str!("../frontend/templates/employees.html"),
+            include_str!("./frontend/templates/employees.html"),
         ),
         (
             "new_employee.html",
-            include_str!("../frontend/templates/new_employee.html"),
+            include_str!("./frontend/templates/new_employee.html"),
         ),
         (
             "save_result.html",
-            include_str!("../frontend/templates/save_result.html"),
+            include_str!("./frontend/templates/save_result.html"),
         ),
         (
             "edit_form.html",
-            include_str!("../frontend/templates/edit_form.html"),
+            include_str!("./frontend/templates/edit_form.html"),
         ),
         (
             "delete_confirmation.html",
-            include_str!("../frontend/templates/delete_confirmation.html"),
+            include_str!("./frontend/templates/delete_confirmation.html"),
         ),
         (
             "errors.html",
-            include_str!("../frontend/templates/errors.html"),
+            include_str!("./frontend/templates/errors.html"),
         ),
     ])
     .unwrap();
 
     // build our application with a route
     Router::new()
-
         .route("/api/v1/healthchecker", get(health_checker))
         .route(
             "/api/v1/employees",
@@ -69,6 +66,7 @@ pub async fn define_routes(logged_in_state: Arc<Mutex<LoggedInState>>, mut tera:
             "/api/v1/employees/:id",
             get(get_employee).patch(generate_handle_and_password),
         )
+        .route("/api/v1/auth", get(basic_auth))
         .route("/styles.css", any(styles))
         .route("/", get(index))
         .route("/list/employees", get(list_employees))
@@ -81,7 +79,8 @@ pub async fn define_routes(logged_in_state: Arc<Mutex<LoggedInState>>, mut tera:
         .route("/save/success", get(save_result_page))
         .route("/delete/employee/:id", get(delete_employee))
         .route("/select/employee/:id", get(select_employee))
-        // .layer(axum_auth::middleware::auth_wrapper(Store::new(), AuthConfig::default()));
         .layer(Extension(Arc::new(tera)))
-        .with_state(logged_in_state)
+        .layer(Extension(shared_state))
+
+    //.with_state(logged_in_state)
 }

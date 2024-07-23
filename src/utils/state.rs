@@ -1,13 +1,15 @@
+use std::{collections::HashMap, sync::Arc};
 
-// Define a struct to represent the logged-in user
-#[derive(Debug)]
-pub struct User {
-    pub handle: String,
-    pub password: String,
+use serde::{Deserialize, Serialize};
+use tokio::sync::Mutex;
+
+#[derive(Clone, Debug)]
+pub struct AppState {
+    pub user_sessions: Arc<Mutex<HashMap<String, String>>>, // Example: Maps usernames to session tokens
 }
 
-// Define a custom State struct to store the logged-in user information
-#[derive(Debug)]
-pub struct LoggedInState {
-    pub user: Option<User>,
+#[derive(Serialize, Deserialize, Debug)]
+pub struct UserData {
+    pub username: String,
+    // Add more fields as needed
 }
