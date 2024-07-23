@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{result, sync::Arc};
 
 use std::collections::HashMap;
 
@@ -23,7 +23,7 @@ use crate::{
     },
     utils::{
         password_utils::{
-            generate_handle, generate_random_password, generate_session_token, hash_password,
+            self, generate_handle, generate_random_password, generate_session_token, hash_password,
         },
         state::AppState,
     },
@@ -86,11 +86,20 @@ pub async fn list_employees(Extension(templates): Extension<Templates>) -> impl 
     };
     let opts: Option<Query<QueryOptions>> = Some(Query(query_options));
 
-    let employees_map = employees_list(opts).await;
-    match employees_map {
-        Ok(result) => {
-            let employees = result.0.employees;
-            context.insert("employees", &employees);
+    let Query(opts) = opts.unwrap_or_default();
+
+    let limit = opts.limit.unwrap_or(10);
+    let offset = (opts.page.unwrap_or(1) - 1) * limit;
+
+    let result = list().await;
+
+    match result {
+        Ok(employees_map) => {
+            let filtered_employees: HashMap<String, Employee> =
+                employees_map.into_iter().skip(offset).take(limit).collect();
+            let mut vec_employees: Vec<Employee> = filtered_employees.values().cloned().collect();
+            vec_employees.sort_by(|x, y: &Employee| x.first_name.cmp(&y.first_name));
+            context.insert("employees", &vec_employees);
             Html(templates.render("employees.html", &context).unwrap())
         }
         Err(_) => {
@@ -102,6 +111,7 @@ pub async fn list_employees(Extension(templates): Extension<Templates>) -> impl 
             Html(templates.render("errors.html", &context).unwrap())
         }
     }
+
     // sort_by_first_name(employees_map, context, templates).await
 }
 
@@ -415,100 +425,174 @@ pub async fn update_employee(
 }
 
 pub async fn create_employee(
+    AuthBasic((id, password)): AuthBasic,
     Json(body): Json<EmployeeRequestBody>,
 ) -> Result<Json<EmployeeResponse>, (StatusCode, Json<EmployeeErrorResponse>)> {
-    let employee = Employee {
-        id: Some(Uuid::new_v4().to_string()),
-        first_name: body.first_name,
-        last_name: body.last_name,
-        personal_email: body.personal_email,
-        avaya_email: None,
-        age: body.age,
-        diploma: body.diploma,
-        onboarded: Some(false),
-        handle: None,
-        password: None,
-        secure_password: Some(false),
-    };
-    let save_result = save(employee.clone()).await;
-    match save_result {
-        Ok(_) => {
-            let json_response = EmployeeResponse {
-                message: "Employee created successfully".to_string(),
-                data: employee,
-            };
-            debug!("{json_response:?}");
-            Ok(Json(json_response))
+    let verified_result = verify_admin_password(id, password.unwrap()).await;
+
+    match verified_result {
+        Ok(verified) => {
+            if verified {
+                let employee = Employee {
+                    id: Some(Uuid::new_v4().to_string()),
+                    first_name: body.first_name,
+                    last_name: body.last_name,
+                    personal_email: body.personal_email,
+                    avaya_email: None,
+                    age: body.age,
+                    diploma: body.diploma,
+                    onboarded: Some(false),
+                    handle: None,
+                    password: None,
+                    secure_password: Some(false),
+                };
+                let save_result = save(employee.clone()).await;
+                match save_result {
+                    Ok(saved) => {
+                        if saved {
+                            let json_response = EmployeeResponse {
+                                message: "Employee created successfully".to_string(),
+                                data: employee,
+                            };
+                            debug!("{json_response:?}");
+                            Ok(Json(json_response))
+                        } else {
+                            let error_response = EmployeeErrorResponse {
+                                error: "Employee already exists or Employee age must be greater than 18 and diploma must not be empty".to_string(),
+                            };
+                            warn!("{error_response:?}");
+                            Err((StatusCode::ALREADY_REPORTED, Json(error_response)))
+                        }
+                    }
+                    Err(error) => {
+                        debug!("{error:?}");
+                        let error_response = EmployeeErrorResponse {
+                            error: error.to_string(),
+                        };
+                        warn!("{error_response:?}");
+                        Err((StatusCode::NOT_MODIFIED, Json(error_response)))
+                    }
+                }
+            } else {
+                let error_response = EmployeeErrorResponse {
+                    error: "Invalid credentials".to_string(),
+                };
+                warn!("{error_response:?}");
+                Err((StatusCode::UNAUTHORIZED, Json(error_response)))
+            }
         }
         Err(error) => {
-            debug!("{error:?}");
+            error!("{error:?}");
             let error_response = EmployeeErrorResponse {
-                error: error.to_string(),
+                error: "Invalid credentials".to_string(),
             };
-            Err((StatusCode::NOT_MODIFIED, Json(error_response)))
+            Err((StatusCode::UNAUTHORIZED, Json(error_response)))
         }
     }
 }
 
 pub async fn employees_list(
+    AuthBasic((id, password)): AuthBasic,
     opts: Option<Query<QueryOptions>>,
 ) -> Result<Json<EmployeeListResponse>, (StatusCode, Json<EmployeeErrorResponse>)> {
-    let Query(opts) = opts.unwrap_or_default();
+    let verified_result = verify_admin_password(id, password.unwrap()).await;
 
-    let limit = opts.limit.unwrap_or(10);
-    let offset = (opts.page.unwrap_or(1) - 1) * limit;
+    match verified_result {
+        Ok(verified) => {
+            if verified {
+                let Query(opts) = opts.unwrap_or_default();
 
-    let employees_list = list().await;
+                let limit = opts.limit.unwrap_or(10);
+                let offset = (opts.page.unwrap_or(1) - 1) * limit;
 
-    match employees_list {
-        Ok(employees) => {
-            let filtered_employees: HashMap<String, Employee> = employees
-                .into_iter()
-                .skip(offset)
-                .take(limit)
-                // .filter(|(_id, employee)| employee.onboarded == Some(false))
-                .collect();
+                let employees_list = list().await;
 
-            let mut vec_employees: Vec<Employee> = filtered_employees.values().cloned().collect();
-            vec_employees.sort_by(|x, y| x.first_name.cmp(&y.first_name));
+                match employees_list {
+                    Ok(employees) => {
+                        let filtered_employees: HashMap<String, Employee> = employees
+                            .into_iter()
+                            .skip(offset)
+                            .take(limit)
+                            .filter(|(_id, employee)| employee.onboarded == Some(false))
+                            .collect();
 
-            let json_response = EmployeeListResponse {
-                message: "Employees list".to_string(),
-                results: filtered_employees.len(),
-                employees: vec_employees,
-            };
-            debug!("{json_response:?}");
-            Ok(Json(json_response))
+                        let mut vec_employees: Vec<Employee> =
+                            filtered_employees.values().cloned().collect();
+                        vec_employees.sort_by(|x, y| x.first_name.cmp(&y.first_name));
+
+                        let json_response = EmployeeListResponse {
+                            message: "Employees list".to_string(),
+                            results: filtered_employees.len(),
+                            employees: vec_employees,
+                        };
+                        debug!("{json_response:?}");
+                        Ok(Json(json_response))
+                    }
+                    Err(error) => {
+                        debug!("{error:?}");
+                        let error_response = EmployeeErrorResponse {
+                            error: error.to_string(),
+                        };
+                        Err((StatusCode::NOT_MODIFIED, Json(error_response)))
+                    }
+                }
+            } else {
+                let error_response = EmployeeErrorResponse {
+                    error: "Invalid credentials".to_string(),
+                };
+                Err((StatusCode::UNAUTHORIZED, Json(error_response)))
+            }
         }
         Err(error) => {
             debug!("{error:?}");
             let error_response = EmployeeErrorResponse {
-                error: error.to_string(),
+                error: "Invalid credentials".to_string(),
             };
-            Err((StatusCode::NOT_MODIFIED, Json(error_response)))
+            Err((StatusCode::UNAUTHORIZED, Json(error_response)))
         }
     }
 }
 
 pub async fn get_employee(
-    Path(id): Path<String>,
+    AuthBasic((id, password)): AuthBasic,
+    Path(emp_id): Path<String>,
 ) -> Result<Json<EmployeeResponse>, (StatusCode, Json<EmployeeErrorResponse>)> {
-    let employee_result = get_employee_by_id(id.clone()).await;
-    match employee_result {
-        Ok(employee) => {
-            let json_response = EmployeeResponse {
-                message: "Employee found".to_string(),
-                data: employee,
-            };
-            debug!("{json_response:?}");
-            Ok(Json(json_response))
+    let verified_result = verify_admin_password(id, password.unwrap()).await;
+
+    match verified_result {
+        Ok(verified) => {
+            if verified {
+                let employee_result = get_employee_by_id(emp_id.clone()).await;
+                match employee_result {
+                    Ok(employee) => {
+                        let json_response = EmployeeResponse {
+                            message: "Employee found".to_string(),
+                            data: employee,
+                        };
+                        debug!("{json_response:?}");
+                        Ok(Json(json_response))
+                    }
+                    Err(error) => {
+                        debug!("{error:?}");
+                        let error_response = EmployeeErrorResponse {
+                            error: error.to_string(),
+                        };
+                        Err((StatusCode::NOT_FOUND, Json(error_response)))
+                    }
+                }
+            } else {
+                let error_response = EmployeeErrorResponse {
+                    error: "Invalid credentials".to_string(),
+                };
+                Err((StatusCode::UNAUTHORIZED, Json(error_response)))
+            }
         }
         Err(error) => {
             debug!("{error:?}");
             let error_response = EmployeeErrorResponse {
-                error: error.to_string(),
+                error: "Invalid credentials".to_string(),
             };
-            Err((StatusCode::NOT_MODIFIED, Json(error_response)))
+            Err((StatusCode::UNAUTHORIZED, Json(error_response)))
         }
     }
 }
@@ -536,126 +620,125 @@ pub async fn employee_by_handle(
         }
     }
 }
-pub async fn generate_handle_and_password(Path(id): Path<String>) -> impl IntoResponse {
-    let employees_list = list().await;
+pub async fn generate_handle_and_password(
+    AuthBasic((id, password)): AuthBasic,
+    Path(emp_id): Path<String>,
+) -> impl IntoResponse {
+    let verified_result = verify_admin_password(id, password.unwrap()).await;
 
-    match employees_list {
-        Ok(employees) => {
-            // list not onboarded employees
+    match verified_result {
+        Ok(verified) => {
+            if verified {
+                let employees_list = list().await;
 
-            let filtered_employee = employees.get(&id).unwrap();
+                match employees_list {
+                    Ok(employees) => {
+                        // list not onboarded employees
 
-            let new_handle = generate_handle(
-                filtered_employee.first_name.clone(),
-                filtered_employee.last_name.clone(),
-            )
-            .await;
+                        let filtered_employee = employees.get(&emp_id).unwrap();
 
-            let employee = Employee {
-                id: filtered_employee.id.clone(),
-                first_name: filtered_employee.first_name.clone(),
-                last_name: filtered_employee.last_name.clone(),
-                personal_email: filtered_employee.personal_email.clone(),
-                avaya_email: Some(format!("{}@avaya.com", new_handle)),
-                age: filtered_employee.age,
-                diploma: filtered_employee.diploma.clone(),
-                onboarded: Some(true),
-                handle: Some(new_handle),
-                password: Some(generate_random_password().await),
-                secure_password: Some(false),
-            };
+                        let new_handle = generate_handle(
+                            filtered_employee.first_name.clone(),
+                            filtered_employee.last_name.clone(),
+                        )
+                        .await;
 
-            let save_result = save(employee.clone()).await;
-            match save_result {
-                Ok(_) => {
-                    let json_response = EmployeeResponse {
-                        message: "Employee onboarded successfully".to_string(),
-                        data: employee,
-                    };
-                    debug!("{json_response:?}");
-                    Ok((StatusCode::OK, Json(json_response)))
+                        let employee = Employee {
+                            id: filtered_employee.id.clone(),
+                            first_name: filtered_employee.first_name.clone(),
+                            last_name: filtered_employee.last_name.clone(),
+                            personal_email: filtered_employee.personal_email.clone(),
+                            avaya_email: Some(format!("{}@avaya.com", new_handle)),
+                            age: filtered_employee.age,
+                            diploma: filtered_employee.diploma.clone(),
+                            onboarded: Some(true),
+                            handle: Some(new_handle),
+                            password: Some(generate_random_password().await),
+                            secure_password: Some(false),
+                        };
+
+                        let save_result = save(employee.clone()).await;
+                        match save_result {
+                            Ok(_) => {
+                                let json_response = EmployeeResponse {
+                                    message: "Employee onboarded successfully".to_string(),
+                                    data: employee,
+                                };
+                                debug!("{json_response:?}");
+                                Ok((StatusCode::OK, Json(json_response)))
+                            }
+                            Err(error) => {
+                                debug!("{error:?}");
+                                let json_response = EmployeeErrorResponse {
+                                    error: error.to_string(),
+                                };
+                                Err((StatusCode::NOT_MODIFIED, Json(json_response)))
+                            }
+                        }
+                    }
+                    Err(error) => {
+                        debug!("{error:?}");
+                        let error_response = EmployeeErrorResponse {
+                            error: error.to_string(),
+                        };
+                        Err((StatusCode::NOT_MODIFIED, Json(error_response)))
+                    }
                 }
-                Err(error) => {
-                    debug!("{error:?}");
-                    let json_response = EmployeeErrorResponse {
-                        error: error.to_string(),
-                    };
-                    Err((StatusCode::NOT_MODIFIED, Json(json_response)))
-                }
+            } else {
+                let error_response = EmployeeErrorResponse {
+                    error: "Invalid credentials".to_string(),
+                };
+                Err((StatusCode::UNAUTHORIZED, Json(error_response)))
             }
         }
         Err(error) => {
             debug!("{error:?}");
             let error_response = EmployeeErrorResponse {
-                error: error.to_string(),
+                error: "Invalid credentials".to_string(),
             };
-            Err((StatusCode::NOT_MODIFIED, Json(error_response)))
+            Err((StatusCode::UNAUTHORIZED, Json(error_response)))
         }
     }
 }
 
-pub async fn basic_auth(
-    AuthBasic((id, password)): AuthBasic,
-    state: Extension<Arc<AppState>>,
-) -> Result<String, (StatusCode, &'static str)> {
-    let AppState { user_sessions } = state.0.as_ref().clone();
+async fn verify_handle_password(
+    handle: String,
+    password: String,
+) -> Result<bool, (StatusCode, &'static str)> {
+    let employee = get_employee_by_handle(handle.clone()).await;
+    match employee {
+        Ok(employee) => {
+            let hashed_password = employee.password.unwrap();
+            let password_verified =
+                password_utils::verify_hashed_password(password, hashed_password).await;
+            if password_verified {
+                Ok(true)
+            } else {
+                Err((StatusCode::UNAUTHORIZED, "Invalid credentials"))
+            }
+        }
+        Err(_) => Err((StatusCode::UNAUTHORIZED, "Invalid credentials")),
+    }
+}
 
-    if id == "admin" {
-        let admin = get_admin_by_id(id.clone()).await;
-        match admin {
-            Ok(admin) => {
-                if password == admin.password {
-                    let mut sessions = user_sessions.lock().await;
-                    let session_token = generate_session_token(id.clone()).await;
-                    sessions.insert(id.clone(), session_token.clone()); // Simulate session creation
-                    info!("{sessions:?}");
-                    Ok(format!(
-                        "{id:?} authenticated with session token: {session_token:?}"
-                    ))
+async fn verify_admin_password(
+    id: String,
+    password: String,
+) -> Result<bool, (StatusCode, &'static str)> {
+    let admin = get_admin_by_id(id.clone()).await;
+    match admin {
+        Ok(admin) => {
+            if admin.id.is_empty() && admin.password.is_none() {
+                return Err((StatusCode::UNAUTHORIZED, "Invalid credentials"));
+            } else {
+                let random_password = admin.password.unwrap();
+                if password == random_password {
+                    Ok(true)
                 } else {
                     Err((StatusCode::UNAUTHORIZED, "Invalid credentials"))
                 }
             }
-            Err(_) => Err((StatusCode::UNAUTHORIZED, "Invalid credentials")),
         }
-    } else {
-        // Example authentication logic
-        if id == "admin" && password == Some("password".to_owned()) {
-            let mut sessions = user_sessions.lock().await;
-            let session_token = generate_session_token(id.clone()).await;
-            sessions.insert(id.clone(), session_token.clone()); // Simulate session creation
-            Ok(format!(
-                "{id:?} authenticated with session token: {session_token:?}"
-            ))
-        } else {
-            Err((StatusCode::UNAUTHORIZED, "Invalid credentials"))
-        }
+        Err(_) => Err((StatusCode::UNAUTHORIZED, "Invalid credentials")),
     }
 }
-
-// async fn verify_password(handle: String, password: String) -> LoggedInState {
-//     let mut context = Context::new();
-//     context.insert("title", "Edit Employee");
-
-//     let path: Path<String> = Path(handle.clone());
-//     let employee_by_handle = get_employee_by_handle_2(path).await;
-
-//     match employee_by_handle {
-//         Ok(employee_response) => {
-//             let employee = employee_response.0.data;
-//             let hashed_password = employee.password.unwrap();
-//             let is_valid = verify_hashed_password(password, hashed_password.clone()).await;
-//             if is_valid {
-//                 LoggedInState {
-//                     user: Some(User {
-//                         handle: employee.handle.unwrap(),
-//                         password: hashed_password,
-//                     }),
-//                 }
-//             } else {
-//                 LoggedInState { user: None }
-//             }
-//         }
-//         Err(_) => LoggedInState { user: None },
-//     }
-// }
