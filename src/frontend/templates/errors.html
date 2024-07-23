@@ -7,13 +7,13 @@
     <div class="container d-flex min-vh-100 justify-content-center align-items-center">
         <div class="row justify-content-center  shadow-lg p-3 mb-5 bg-body rounded">
             {% if error_message %}
-            <h1> {{error_message.status}}</h1>
+            <h1> Warning </h1>
             <div class="col-md-12">
                 <div class="table-responsive">
                     <hr>
                     <br>
                     <i class="bi bi-exclamation-triangle-fill"></i>
-                    {{error_message.description}}
+                    {{error_message.error}}
                     <br>
                     <br>
                     <hr>

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::{
-    routing::{any, get, patch, post},
+    routing::{any, get, post},
     Extension, Router,
 };
 

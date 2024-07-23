@@ -1,4 +1,4 @@
-use std::{result, sync::Arc};
+use std::sync::Arc;
 
 use std::collections::HashMap;
 
@@ -9,7 +9,7 @@ use axum::{
     Extension, Json,
 };
 use axum_auth::AuthBasic;
-use log::{debug, info};
+use log::debug;
 
 use uuid::Uuid;
 
@@ -21,12 +21,7 @@ use crate::{
         Employee, EmployeeErrorResponse, EmployeeListResponse, EmployeeRequestBody,
         EmployeeResponse, QueryOptions,
     },
-    utils::{
-        password_utils::{
-            self, generate_handle, generate_random_password, generate_session_token, hash_password,
-        },
-        state::AppState,
-    },
+    utils::password_utils::{self, generate_handle, generate_random_password, hash_password},
 };
 use axum::{
     http::{self, Response},
@@ -729,7 +724,7 @@ async fn verify_admin_password(
     match admin {
         Ok(admin) => {
             if admin.id.is_empty() && admin.password.is_none() {
-                return Err((StatusCode::UNAUTHORIZED, "Invalid credentials"));
+                Err((StatusCode::UNAUTHORIZED, "Invalid credentials"))
             } else {
                 let random_password = admin.password.unwrap();
                 if password == random_password {

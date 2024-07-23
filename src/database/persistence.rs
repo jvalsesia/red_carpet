@@ -89,29 +89,27 @@ pub async fn save(employee: Employee) -> Result<bool> {
             if result {
                 warn!("Employee already exists");
                 Ok(false)
-            } else {
-                if employee.age >= 18 && !employee.diploma.is_empty() {
-                    let employee_file_path = Path::new(EMPLOYEE_DATA_FILE);
-                    let data = fs::read_to_string(employee_file_path).expect("Unable to read file");
-                    let mut map_employees: HashMap<String, Employee> = HashMap::new();
+            } else if employee.age >= 18 && !employee.diploma.is_empty() {
+                let employee_file_path = Path::new(EMPLOYEE_DATA_FILE);
+                let data = fs::read_to_string(employee_file_path).expect("Unable to read file");
+                let mut map_employees: HashMap<String, Employee> = HashMap::new();
 
-                    //let mut employees: Vec<Employee> = Vec::new();
-                    if fs::metadata(employee_file_path).unwrap().len() != 0 {
-                        //  employees = serde_json::from_str(&data)?;
-                        map_employees = serde_json::from_str(&data)?;
-                    }
-                    map_employees.insert(employee.id.clone().unwrap(), employee.clone());
-                    // employees.push(employee.clone());
-
-                    let json: String = serde_json::to_string_pretty(&map_employees)?;
-                    fs::write(employee_file_path, json).expect("Unable to write file");
-                    debug!("saving employee: {employee:?}");
-
-                    Ok(true)
-                } else {
-                    warn!("Employee age must be greater than 18 and diploma must not be empty");
-                    Ok(false)
+                //let mut employees: Vec<Employee> = Vec::new();
+                if fs::metadata(employee_file_path).unwrap().len() != 0 {
+                    //  employees = serde_json::from_str(&data)?;
+                    map_employees = serde_json::from_str(&data)?;
                 }
+                map_employees.insert(employee.id.clone().unwrap(), employee.clone());
+                // employees.push(employee.clone());
+
+                let json: String = serde_json::to_string_pretty(&map_employees)?;
+                fs::write(employee_file_path, json).expect("Unable to write file");
+                debug!("saving employee: {employee:?}");
+
+                Ok(true)
+            } else {
+                warn!("Employee age must be greater than 18 and diploma must not be empty");
+                Ok(false)
             }
         }
         Err(_) => Ok(false),
