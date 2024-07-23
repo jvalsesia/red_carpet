@@ -47,8 +47,7 @@ pub async fn create_admin(admin: Admin) -> Result<bool> {
     match admin_exists {
         Ok(result) => {
             if result {
-                debug!("Admin already exists");
-                Ok(true)
+                Ok(false)
             } else {
                 let admin_file_path = Path::new(ADMIN_DATA_FILE);
                 let data = fs::read_to_string(admin_file_path).expect("Unable to read file");
@@ -73,7 +72,7 @@ pub async fn create_admin(admin: Admin) -> Result<bool> {
                 fs::write(admin_file_path, json).expect("Unable to write file");
                 debug!("saving admin: {new_admin:?}");
 
-                Ok(false)
+                Ok(true)
             }
         }
         Err(_) => Ok(false),
@@ -209,6 +208,8 @@ pub async fn check_admin_exists(id: String) -> Result<bool> {
         map_admins = serde_json::from_str(&data)?;
     }
 
+    let admin = map_admins.get(&id);
+    info!("admin: {admin:?}");
     let admin_exists = map_admins.contains_key(&id);
 
     Ok(admin_exists)

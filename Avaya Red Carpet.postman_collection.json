@@ -52,7 +52,7 @@
 			"response": []
 		},
 		{
-			"name": "Create Employee Copy",
+			"name": "Create Employee Form",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -69,16 +69,37 @@
 				"method": "POST",
 				"header": [],
 				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"first_name\": \"{{$randomFirstName}}\",\n    \"last_name\": \"{{$randomLastName}}\",\n    \"personal_email\" : \"{{$randomEmail}}\",\n    \"age\": {{$randomInt}},\n    \"diploma\": \"{{$randomJobType}}\" \n}",
-					"options": {
-						"raw": {
-							"language": "json"
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "first_name",
+							"value": "{{$randomFirstName}}",
+							"type": "text"
+						},
+						{
+							"key": "last_name",
+							"value": "{{$randomLastName}}",
+							"type": "text"
+						},
+						{
+							"key": "personal_email",
+							"value": "{{$randomEmail}}",
+							"type": "text"
+						},
+						{
+							"key": "age",
+							"value": "{{$randomInt}}",
+							"type": "text"
+						},
+						{
+							"key": "diploma",
+							"value": "{{$randomJobType}}",
+							"type": "text"
 						}
-					}
+					]
 				},
 				"url": {
-					"raw": "http://127.0.0.1:8080/blah",
+					"raw": "http://127.0.0.1:8080/save/employee",
 					"protocol": "http",
 					"host": [
 						"127",
@@ -88,7 +109,8 @@
 					],
 					"port": "8080",
 					"path": [
-						"blah"
+						"save",
+						"employee"
 					]
 				}
 			},
@@ -264,37 +286,12 @@
 			"response": []
 		},
 		{
-			"name": "Get Employee",
+			"name": "Get Employee by id",
 			"request": {
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://127.0.0.1:8080/api/v1/employees/ebea0e3d-2303-428b-a8eb-aef8afbfc932",
-					"protocol": "http",
-					"host": [
-						"127",
-						"0",
-						"0",
-						"1"
-					],
-					"port": "8080",
-					"path": [
-						"api",
-						"v1",
-						"employees",
-						"ebea0e3d-2303-428b-a8eb-aef8afbfc932"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Login Employee",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "http://127.0.0.1:8080/api/v1/employee/login",
+					"raw": "http://127.0.0.1:8080/api/v1/employee/41ce0ccc-7cf9-4d53-ad23-383a987a9bb5",
 					"protocol": "http",
 					"host": [
 						"127",
@@ -307,7 +304,7 @@
 						"api",
 						"v1",
 						"employee",
-						"login"
+						"41ce0ccc-7cf9-4d53-ad23-383a987a9bb5"
 					]
 				}
 			},
@@ -319,7 +316,7 @@
 				"method": "PATCH",
 				"header": [],
 				"url": {
-					"raw": "http://127.0.0.1:8080/api/v1/employees/81aef09f-ad62-4853-80e9-07b4941946b4",
+					"raw": "http://127.0.0.1:8080/api/v1/employee/41ce0ccc-7cf9-4d53-ad23-383a987a9bb5",
 					"protocol": "http",
 					"host": [
 						"127",
@@ -331,8 +328,8 @@
 					"path": [
 						"api",
 						"v1",
-						"employees",
-						"81aef09f-ad62-4853-80e9-07b4941946b4"
+						"employee",
+						"41ce0ccc-7cf9-4d53-ad23-383a987a9bb5"
 					]
 				}
 			},
@@ -341,6 +338,9 @@
 		{
 			"name": "Health Checker",
 			"request": {
+				"auth": {
+					"type": "noauth"
+				},
 				"method": "GET",
 				"header": [],
 				"url": {
@@ -361,6 +361,43 @@
 				}
 			},
 			"response": []
+		}
+	],
+	"auth": {
+		"type": "basic",
+		"basic": [
+			{
+				"key": "password",
+				"value": "e|NzP!20U",
+				"type": "string"
+			},
+			{
+				"key": "username",
+				"value": "admin",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
 		}
 	]
 }
