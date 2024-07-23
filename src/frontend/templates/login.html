@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+
+<body>
+    <div class="container d-flex min-vh-100 justify-content-center align-items-center">
+        <div class="row justify-content-center  shadow-lg p-3 mb-5 bg-body rounded">
+            <h1>{{title}}</h1>
+            <div class="col-md-12">
+                <div class="table-responsive">
+
+                    <form needs-validation class="was-validated" id="login_form" method="POST"
+                        enctype="application/x-www-form-urlencoded" action="/admin/login">
+
+
+                        <div class="form-floating">
+                            <input class="form-control" name="id" id="id" type="text" placeholder="" value="">
+                            <label for="id">handle</label>
+                            <div class="valid-feedback">
+                                Looks good!
+                            </div>
+                            <div class="invalid-feedback">
+                                Please enter the handle.
+                            </div>
+                        </div>
+                        <br>
+
+
+
+                        <div class="form-floating">
+                            <input type="password" class="form-control" name="password" id="password"
+                                placeholder="Password" value="">
+                            <label for="password">Password</label>
+                            <div class="valid-feedback">
+                                Looks good!
+                            </div>
+                            <div class="invalid-feedback">
+                                Please enter the password.
+                            </div>
+                        </div>
+                        <br>
+
+                    </form>
+                    {% if error_message %}
+                    <div class="alert alert-danger" role="alert">
+                        {{error_message}}
+                    </div>
+                    {% endif %}
+                </div>
+                <br>
+
+                <div class="button-container">
+                    <a href="/" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" form="login_form" class="btn btn-primary">Login</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+</body>
+
+
+{% endblock %}

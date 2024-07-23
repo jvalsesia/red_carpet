@@ -17,9 +17,12 @@ use crate::{
     database::persistence::{
         delete, get_admin_by_id, get_employee_by_handle, get_employee_by_id, list, save, update,
     },
-    models::employee_models::{
-        Employee, EmployeeErrorResponse, EmployeeListResponse, EmployeeRequestBody,
-        EmployeeResponse, QueryOptions,
+    models::{
+        admin_models::Admin,
+        employee_models::{
+            Employee, EmployeeErrorResponse, EmployeeListResponse, EmployeeRequestBody,
+            EmployeeResponse, QueryOptions,
+        },
     },
     utils::password_utils::{self, generate_handle, generate_random_password, hash_password},
 };
@@ -49,6 +52,13 @@ pub async fn index(Extension(templates): Extension<Templates>) -> impl IntoRespo
     Html(templates.render("index.html", &context).unwrap())
 }
 
+pub async fn login(Extension(templates): Extension<Templates>) -> impl IntoResponse {
+    let mut context = Context::new();
+    context.insert("title", "Login to Avaya Red Carpet");
+
+    Html(templates.render("login.html", &context).unwrap())
+}
+
 pub async fn errors(Extension(templates): Extension<Templates>) -> impl IntoResponse {
     let mut context = Context::new();
     context.insert("title", "Error");
@@ -72,9 +82,11 @@ pub async fn save_result_page(Extension(templates): Extension<Templates>) -> imp
 
 pub async fn list_employees(Extension(templates): Extension<Templates>) -> impl IntoResponse {
     let mut context = Context::new();
-    context.insert("title", "List Employees");
-    context.insert("selected_id", "");
+    context.insert("title", "Admin Dashboard");
+    list_employees_renderer(context, templates).await
+}
 
+async fn list_employees_renderer(mut context: Context, templates: Arc<Tera>) -> Html<String> {
     let query_options = QueryOptions {
         page: Some(1),
         limit: Some(1000),
@@ -106,8 +118,6 @@ pub async fn list_employees(Extension(templates): Extension<Templates>) -> impl 
             Html(templates.render("errors.html", &context).unwrap())
         }
     }
-
-    // sort_by_first_name(employees_map, context, templates).await
 }
 
 pub async fn edit_employee(
@@ -735,5 +745,45 @@ async fn verify_admin_password(
             }
         }
         Err(_) => Err((StatusCode::UNAUTHORIZED, "Invalid credentials")),
+    }
+}
+
+pub async fn login_admin(
+    Extension(templates): Extension<Templates>,
+    Form(admin_login_data): Form<Admin>,
+) -> impl IntoResponse {
+    let mut context = Context::new();
+
+    warn!("admin_login_data---> {:?}", admin_login_data);
+
+    let admin = Admin {
+        id: admin_login_data.id.clone(),
+        password: admin_login_data.password.clone(),
+    };
+
+    let admin_result = get_admin_by_id(admin.id.clone()).await;
+
+    match admin_result {
+        Ok(admin) => {
+            if admin.id.is_empty() && admin.password.is_none() {
+                context.insert("title", "Login");
+                context.insert("error_message", "Invalid credentials");
+                Html(templates.render("login.html", &context).unwrap())
+            } else {
+                if admin.password.unwrap() == admin_login_data.password.unwrap() {
+                    context.insert("title", "Admin Dashboard");
+                    list_employees_renderer(context, templates).await
+                } else {
+                    context.insert("title", "Login");
+                    context.insert("error_message", "Invalid credentials");
+                    Html(templates.render("login.html", &context).unwrap())
+                }
+            }
+        }
+        Err(_) => {
+            context.insert("title", "Login");
+            context.insert("error_message", "Invalid credentials");
+            Html(templates.render("login.html", &context).unwrap())
+        }
     }
 }
