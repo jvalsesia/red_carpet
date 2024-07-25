@@ -13,8 +13,8 @@ use crate::{
         create_employee, delete_employee, edit_employee, employees_list,
         generate_handle_and_password, get_employee, handle_edit_form_data,
         handle_onboard_form_data, handle_save_form_data, health_checker, index, list_employees,
-        login, login_admin, new_employee_page, save_result_page, secure_password, select_employee,
-        styles,
+        login, login_admin, logout_admin, new_employee_page, save_result_page, secure_password,
+        select_employee, styles,
     },
     utils::state::AppState,
 };
@@ -76,6 +76,7 @@ pub async fn define_routes(state: AppState, mut tera: Tera) -> Router {
         .route("/", get(index))
         .route("/login", get(login))
         .route("/admin/login", post(login_admin))
+        .route("/admin/logout", get(logout_admin))
         .route("/list/employees", get(list_employees))
         .route("/edit/employee/:id", get(edit_employee))
         .route("/update/employee", post(handle_edit_form_data))

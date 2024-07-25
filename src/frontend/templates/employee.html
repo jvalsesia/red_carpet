@@ -71,16 +71,17 @@
 
                             <div class="form-floating">
 
-                                {% if employee.onboarded %}
-
+                                {% if employee.onboarded and employee.secure_password %}
                                 <input readonly style="background-color: lightgreen;" class="form-control"
                                     name="onboarded" id="onboarded" type="text" placeholder=""
                                     value="{{employee.onboarded}}">
+                                {% elif employee.onboarded %}
+                                <input readonly style="background-color: yellow;" class="form-control" name="onboarded"
+                                    id="onboarded" type="text" placeholder="" value="{{employee.onboarded}}">
                                 {% else %}
                                 <input readonly style="background-color: lightcoral;" class="form-control"
                                     name="onboarded" id="onboarded" type="text" placeholder=""
                                     value="{{employee.onboarded}}">
-
                                 {% endif %}
                                 </td>
 

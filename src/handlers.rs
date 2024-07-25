@@ -93,6 +93,17 @@ pub async fn list_employees(Extension(templates): Extension<Templates>) -> impl 
     list_employees_renderer(context, templates).await
 }
 
+async fn validate_session_token(state: AppState) -> bool {
+    let sessions = state.sessions.lock().await;
+    let token = sessions.get("admin");
+    warn!("token---> {:?}", token);
+    if token.is_none() {
+        return false;
+    }
+    let token_valid = validate_token_expiration(token.unwrap().to_string()).await;
+    token_valid
+}
+
 async fn list_employees_renderer(mut context: Context, templates: Arc<Tera>) -> Html<String> {
     let query_options = QueryOptions {
         page: Some(1),
@@ -128,26 +139,38 @@ async fn list_employees_renderer(mut context: Context, templates: Arc<Tera>) -> 
 }
 
 pub async fn edit_employee(
+    State(state): State<AppState>,
     Path(id): Path<String>,
     Extension(templates): Extension<Templates>,
 ) -> impl IntoResponse {
-    let mut context = Context::new();
-    context.insert("title", "Employee");
+    let token_valid = validate_session_token(state).await;
+    match token_valid {
+        true => {
+            let mut context = Context::new();
+            context.insert("title", "Edit Employee");
 
-    let result = list().await;
-    match result {
-        Ok(employee_response) => {
-            let employee = employee_response.get(&id).unwrap();
-            context.insert("employee", &employee);
-            Html(templates.render("edit_form.html", &context).unwrap())
+            let result = list().await;
+            match result {
+                Ok(employee_response) => {
+                    let employee = employee_response.get(&id).unwrap();
+                    context.insert("employee", &employee);
+                    Html(templates.render("edit_form.html", &context).unwrap())
+                }
+                Err(_) => {
+                    let error_response = EmployeeErrorResponse {
+                        error: "Employee not found".to_string(),
+                    };
+                    error!("{error_response:?}");
+                    context.insert("error_message", &error_response);
+                    Html(templates.render("errors.html", &context).unwrap())
+                }
+            }
         }
-        Err(_) => {
-            let error_response = EmployeeErrorResponse {
-                error: "Employee not found".to_string(),
-            };
-            error!("{error_response:?}");
-            context.insert("error_message", &error_response);
-            Html(templates.render("errors.html", &context).unwrap())
+        false => {
+            let mut context = Context::new();
+            context.insert("title", "Login to Avaya Red Carpet");
+
+            Html(templates.render("login.html", &context).unwrap())
         }
     }
 }
@@ -157,11 +180,7 @@ pub async fn delete_employee(
     Path(id): Path<String>,
     Extension(templates): Extension<Templates>,
 ) -> impl IntoResponse {
-    let sessions = state.sessions.lock().await;
-
-    let token = sessions.get("admin");
-    warn!("token---> {:?}", token);
-    let token_valid = validate_token_expiration(token.unwrap().to_string()).await;
+    let token_valid = validate_session_token(state).await;
     match token_valid {
         true => {
             let mut context = Context::new();
@@ -194,52 +213,60 @@ pub async fn delete_employee(
             Html(templates.render("login.html", &context).unwrap())
         }
     }
+}
 
+pub async fn select_employee(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Extension(templates): Extension<Templates>,
+) -> impl IntoResponse {
+    let token_valid = validate_session_token(state).await;
+    match token_valid {
+        true => {
+            let mut context = Context::new();
+            context.insert("title", "Employee");
+
+            let employee_result = get_employee_by_id(id.clone()).await;
+            match employee_result {
+                Ok(employee) => {
+                    context.insert("employee", &employee);
+                    Html(templates.render("employee.html", &context).unwrap())
+                }
+                Err(_) => {
+                    let error_response = EmployeeErrorResponse {
+                        error: "Employee not found".to_string(),
+                    };
+                    error!("{error_response:?}");
+                    context.insert("error_message", &error_response);
+                    Html(templates.render("errors.html", &context).unwrap())
+                }
+            }
+        }
+        false => {
+            let mut context = Context::new();
+            context.insert("title", "Login to Avaya Red Carpet");
+
+            Html(templates.render("login.html", &context).unwrap())
+        }
+    }
     // let mut context = Context::new();
-    // context.insert("title", "Edit Employee");
+    // context.insert("title", "Employee");
 
-    // let result = delete(id.clone()).await;
-    // match result {
-    //     Ok(employees_map) => {
-    //         let mut vec_employees: Vec<Employee> = employees_map.values().cloned().collect();
-    //         vec_employees.sort_by(|x, y| x.first_name.cmp(&y.first_name));
-
-    //         context.insert("employees", &vec_employees);
-    //         Html(templates.render("employees.html", &context).unwrap())
+    // let employee_result = get_employee_by_id(id.clone()).await;
+    // match employee_result {
+    //     Ok(employee) => {
+    //         context.insert("employee", &employee);
+    //         Html(templates.render("employee.html", &context).unwrap())
     //     }
     //     Err(_) => {
     //         let error_response = EmployeeErrorResponse {
-    //             error: "Error fetching employees".to_string(),
+    //             error: "Employee not found".to_string(),
     //         };
     //         error!("{error_response:?}");
     //         context.insert("error_message", &error_response);
     //         Html(templates.render("errors.html", &context).unwrap())
     //     }
     // }
-}
-
-pub async fn select_employee(
-    Path(id): Path<String>,
-    Extension(templates): Extension<Templates>,
-) -> impl IntoResponse {
-    let mut context = Context::new();
-    context.insert("title", "Employee");
-
-    let employee_result = get_employee_by_id(id.clone()).await;
-    match employee_result {
-        Ok(employee) => {
-            context.insert("employee", &employee);
-            Html(templates.render("employee.html", &context).unwrap())
-        }
-        Err(_) => {
-            let error_response = EmployeeErrorResponse {
-                error: "Employee not found".to_string(),
-            };
-            error!("{error_response:?}");
-            context.insert("error_message", &error_response);
-            Html(templates.render("errors.html", &context).unwrap())
-        }
-    }
 }
 
 pub async fn handle_edit_form_data(
@@ -318,96 +345,161 @@ pub async fn handle_save_form_data(
 }
 
 pub async fn handle_onboard_form_data(
+    State(state): State<AppState>,
     Extension(templates): Extension<Templates>,
     Form(onboarding_employee): Form<Employee>,
 ) -> impl IntoResponse {
-    let mut context = Context::new();
-    context.insert("title", "Onboarding Employee");
-    let new_handle = generate_handle(
-        onboarding_employee.first_name.clone(),
-        onboarding_employee.last_name.clone(),
-    )
-    .await;
+    let token_valid = validate_session_token(state).await;
+    match token_valid {
+        true => {
+            let mut context = Context::new();
+            context.insert("title", "Onboarding Employee");
+            let new_handle = generate_handle(
+                onboarding_employee.first_name.clone(),
+                onboarding_employee.last_name.clone(),
+            )
+            .await;
 
-    let employee = Employee {
-        id: onboarding_employee.id.clone(),
-        first_name: onboarding_employee.first_name.clone(),
-        last_name: onboarding_employee.last_name.clone(),
-        personal_email: onboarding_employee.personal_email.clone(),
-        avaya_email: Some(format!("{}@avaya.com", new_handle)),
-        age: onboarding_employee.age,
-        diploma: onboarding_employee.diploma.clone(),
-        onboarded: Some(true),
-        handle: Some(new_handle),
-        password: Some(generate_random_password().await),
-        secure_password: Some(false),
-    };
-
-    let employees_map = update(employee).await;
-
-    match employees_map {
-        Ok(employees) => {
-            let mut vec_employees: Vec<Employee> = employees.values().cloned().collect();
-            vec_employees.sort_by(|x, y| x.first_name.cmp(&y.first_name));
-
-            context.insert("employees", &vec_employees);
-            Html(templates.render("employees.html", &context).unwrap())
-        }
-        Err(_) => {
-            let error_response = EmployeeErrorResponse {
-                error: "Error onboarding employee".to_string(),
+            let employee = Employee {
+                id: onboarding_employee.id.clone(),
+                first_name: onboarding_employee.first_name.clone(),
+                last_name: onboarding_employee.last_name.clone(),
+                personal_email: onboarding_employee.personal_email.clone(),
+                avaya_email: Some(format!("{}@avaya.com", new_handle)),
+                age: onboarding_employee.age,
+                diploma: onboarding_employee.diploma.clone(),
+                onboarded: Some(true),
+                handle: Some(new_handle),
+                password: Some(generate_random_password().await),
+                secure_password: Some(false),
             };
-            error!("{error_response:?}");
-            context.insert("error_message", &error_response);
-            Html(templates.render("errors.html", &context).unwrap())
+
+            let employees_map = update(employee).await;
+
+            match employees_map {
+                Ok(employees) => {
+                    let mut vec_employees: Vec<Employee> = employees.values().cloned().collect();
+                    vec_employees.sort_by(|x, y| x.first_name.cmp(&y.first_name));
+
+                    context.insert("employees", &vec_employees);
+                    Html(templates.render("employees.html", &context).unwrap())
+                }
+                Err(_) => {
+                    let error_response = EmployeeErrorResponse {
+                        error: "Error onboarding employee".to_string(),
+                    };
+                    error!("{error_response:?}");
+                    context.insert("error_message", &error_response);
+                    Html(templates.render("errors.html", &context).unwrap())
+                }
+            }
+        }
+        false => {
+            let mut context = Context::new();
+            context.insert("title", "Login to Avaya Red Carpet");
+
+            Html(templates.render("login.html", &context).unwrap())
         }
     }
 }
 
 pub async fn secure_password(
+    State(state): State<AppState>,
     Extension(templates): Extension<Templates>,
     Form(employee): Form<Employee>,
 ) -> impl IntoResponse {
-    let mut context = Context::new();
-    context.insert("title", "Securing Password");
-    warn!("employee.handle ---> {:?}", employee.handle);
-    warn!("employee.password ---> {:?}", employee.password);
+    let token_valid = validate_session_token(state).await;
+    match token_valid {
+        true => {
+            let mut context = Context::new();
+            context.insert("title", "Securing Password");
 
-    let hashed_password = hash_password(employee.password.clone().unwrap()).await;
-    warn!("hashed_password ---> {:?}", hashed_password);
-    let modified_employee = Employee {
-        id: employee.id,
-        first_name: employee.first_name.clone(),
-        last_name: employee.last_name.clone(),
-        personal_email: employee.personal_email.clone(),
-        avaya_email: employee.avaya_email.clone(),
-        age: employee.age,
-        diploma: employee.diploma.clone(),
-        onboarded: employee.onboarded,
-        handle: employee.handle.clone(),
-        password: Some(hashed_password),
-        secure_password: Some(true),
-    };
+            warn!("employee.handle ---> {:?}", employee.handle);
+            warn!("employee.password ---> {:?}", employee.password);
 
-    let employees_map = update(modified_employee.clone()).await;
-    match employees_map {
-        Ok(employees) => {
-            let id = modified_employee.id.clone().unwrap();
-            let mut vec_employees: Vec<Employee> = employees.values().cloned().collect();
-            vec_employees.sort_by(|x, y| x.first_name.cmp(&y.first_name));
-
-            context.insert("employees", &vec_employees);
-            Html(templates.render("employees.html", &context).unwrap())
-        }
-        Err(_) => {
-            let error_response = EmployeeErrorResponse {
-                error: "Error securing employee".to_string(),
+            let hashed_password = hash_password(employee.password.clone().unwrap()).await;
+            warn!("hashed_password ---> {:?}", hashed_password);
+            let modified_employee = Employee {
+                id: employee.id,
+                first_name: employee.first_name.clone(),
+                last_name: employee.last_name.clone(),
+                personal_email: employee.personal_email.clone(),
+                avaya_email: employee.avaya_email.clone(),
+                age: employee.age,
+                diploma: employee.diploma.clone(),
+                onboarded: employee.onboarded,
+                handle: employee.handle.clone(),
+                password: Some(hashed_password),
+                secure_password: Some(true),
             };
-            error!("{error_response:?}");
-            context.insert("error_message", &error_response);
-            Html(templates.render("errors.html", &context).unwrap())
+
+            let employees_map = update(modified_employee.clone()).await;
+            match employees_map {
+                Ok(employees) => {
+                    let id = modified_employee.id.clone().unwrap();
+                    let mut vec_employees: Vec<Employee> = employees.values().cloned().collect();
+                    vec_employees.sort_by(|x, y| x.first_name.cmp(&y.first_name));
+
+                    context.insert("employees", &vec_employees);
+                    Html(templates.render("employees.html", &context).unwrap())
+                }
+                Err(_) => {
+                    let error_response = EmployeeErrorResponse {
+                        error: "Error securing employee".to_string(),
+                    };
+                    error!("{error_response:?}");
+                    context.insert("error_message", &error_response);
+                    Html(templates.render("errors.html", &context).unwrap())
+                }
+            }
+        }
+        false => {
+            let mut context = Context::new();
+            context.insert("title", "Login to Avaya Red Carpet");
+
+            Html(templates.render("login.html", &context).unwrap())
         }
     }
+    // let mut context = Context::new();
+    // context.insert("title", "Securing Password");
+    // warn!("employee.handle ---> {:?}", employee.handle);
+    // warn!("employee.password ---> {:?}", employee.password);
+
+    // let hashed_password = hash_password(employee.password.clone().unwrap()).await;
+    // warn!("hashed_password ---> {:?}", hashed_password);
+    // let modified_employee = Employee {
+    //     id: employee.id,
+    //     first_name: employee.first_name.clone(),
+    //     last_name: employee.last_name.clone(),
+    //     personal_email: employee.personal_email.clone(),
+    //     avaya_email: employee.avaya_email.clone(),
+    //     age: employee.age,
+    //     diploma: employee.diploma.clone(),
+    //     onboarded: employee.onboarded,
+    //     handle: employee.handle.clone(),
+    //     password: Some(hashed_password),
+    //     secure_password: Some(true),
+    // };
+
+    // let employees_map = update(modified_employee.clone()).await;
+    // match employees_map {
+    //     Ok(employees) => {
+    //         let id = modified_employee.id.clone().unwrap();
+    //         let mut vec_employees: Vec<Employee> = employees.values().cloned().collect();
+    //         vec_employees.sort_by(|x, y| x.first_name.cmp(&y.first_name));
+
+    //         context.insert("employees", &vec_employees);
+    //         Html(templates.render("employees.html", &context).unwrap())
+    //     }
+    //     Err(_) => {
+    //         let error_response = EmployeeErrorResponse {
+    //             error: "Error securing employee".to_string(),
+    //         };
+    //         error!("{error_response:?}");
+    //         context.insert("error_message", &error_response);
+    //         Html(templates.render("errors.html", &context).unwrap())
+    //     }
+    // }
 }
 
 pub async fn health_checker() -> impl IntoResponse {
@@ -792,6 +884,17 @@ async fn verify_admin_password(
         }
         Err(_) => Err((StatusCode::UNAUTHORIZED, "Invalid credentials")),
     }
+}
+
+pub async fn logout_admin(
+    State(state): State<AppState>,
+    Extension(templates): Extension<Templates>,
+) -> impl IntoResponse {
+    warn!("Logging out admin");
+    state.sessions.lock().await.remove("admin");
+    let mut context = Context::new();
+    context.insert("title", "Login to Avaya Red Carpet");
+    Html(templates.render("login.html", &context).unwrap())
 }
 
 pub async fn login_admin(
