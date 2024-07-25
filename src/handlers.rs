@@ -11,7 +11,6 @@ use axum::{
 use axum_auth::AuthBasic;
 use log::debug;
 
-use tokio::sync::Mutex;
 use uuid::Uuid;
 
 use crate::{
@@ -30,7 +29,7 @@ use crate::{
             self, generate_handle, generate_random_password, generate_session_token, hash_password,
             validate_token_expiration,
         },
-        state::{self, AppState},
+        state::AppState,
     },
 };
 use axum::{
@@ -100,8 +99,7 @@ async fn validate_session_token(state: AppState) -> bool {
     if token.is_none() {
         return false;
     }
-    let token_valid = validate_token_expiration(token.unwrap().to_string()).await;
-    token_valid
+    validate_token_expiration(token.unwrap().to_string()).await
 }
 
 async fn list_employees_renderer(mut context: Context, templates: Arc<Tera>) -> Html<String> {
@@ -436,7 +434,6 @@ pub async fn secure_password(
             let employees_map = update(modified_employee.clone()).await;
             match employees_map {
                 Ok(employees) => {
-                    let id = modified_employee.id.clone().unwrap();
                     let mut vec_employees: Vec<Employee> = employees.values().cloned().collect();
                     vec_employees.sort_by(|x, y| x.first_name.cmp(&y.first_name));
 
@@ -921,21 +918,19 @@ pub async fn login_admin(
                 context.insert("title", "Login to Avaya Red Carpet");
                 context.insert("error_message", "Invalid credentials");
                 Html(templates.render("login.html", &context).unwrap())
+            } else if admin.password.unwrap() == admin_login_data.password.unwrap() {
+                // Store the session token in the state
+                state
+                    .sessions
+                    .lock()
+                    .await
+                    .insert("admin".to_string(), token.clone());
+                context.insert("title", "Admin Dashboard");
+                list_employees_renderer(context, templates).await
             } else {
-                if admin.password.unwrap() == admin_login_data.password.unwrap() {
-                    // Store the session token in the state
-                    state
-                        .sessions
-                        .lock()
-                        .await
-                        .insert("admin".to_string(), token.clone());
-                    context.insert("title", "Admin Dashboard");
-                    list_employees_renderer(context, templates).await
-                } else {
-                    context.insert("title", "Login");
-                    context.insert("error_message", "Invalid credentials");
-                    Html(templates.render("login.html", &context).unwrap())
-                }
+                context.insert("title", "Login");
+                context.insert("error_message", "Invalid credentials");
+                Html(templates.render("login.html", &context).unwrap())
             }
         }
         Err(_) => {

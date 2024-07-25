@@ -1,4 +1,4 @@
-use std::{collections::HashMap, f32::consts::E, sync::Arc};
+use std::sync::Arc;
 
 use axum::{
     routing::{any, get, post},
@@ -6,7 +6,6 @@ use axum::{
 };
 
 use tera::Tera;
-use tokio::sync::Mutex;
 
 use crate::{
     handlers::{

@@ -6,7 +6,7 @@ use models::admin_models::Admin;
 use routes::define_routes;
 use tera::Tera;
 use tokio::{net::TcpListener, sync::Mutex};
-use utils::state::{self, AppState};
+use utils::state::AppState;
 
 pub mod database;
 pub mod handlers;
