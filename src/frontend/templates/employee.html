@@ -100,12 +100,14 @@
 
 
                             <div class="form-floating">
-
+                                {% if employee.onboarded and not employee.secure_password%}
+                                <input readonly type="text" class="form-control" name="password" id="password"
+                                    placeholder="Password" value="{{employee.password}}">
+                                {% else %}
                                 <input readonly type="password" class="form-control" name="password" id="password"
                                     placeholder="Password" value="{{employee.password}}">
+                                {% endif %}
                                 <label for="password">Password</label>
-
-
                             </div>
 
                         </form>

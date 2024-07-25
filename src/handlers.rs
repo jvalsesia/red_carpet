@@ -165,7 +165,7 @@ async fn list_employees_renderer(mut context: Context, templates: Arc<Tera>) -> 
             let mut vec_employees: Vec<Employee> = filtered_employees.values().cloned().collect();
             vec_employees.sort_by(|x, y: &Employee| x.first_name.cmp(&y.first_name));
             context.insert("employees", &vec_employees);
-            Html(templates.render("employees.html", &context).unwrap())
+            Html(templates.render("dashboard.html", &context).unwrap())
         }
         Err(_) => {
             let error_response = EmployeeErrorResponse {
@@ -234,7 +234,7 @@ pub async fn delete_employee(
                     vec_employees.sort_by(|x, y| x.first_name.cmp(&y.first_name));
 
                     context.insert("employees", &vec_employees);
-                    Html(templates.render("employees.html", &context).unwrap())
+                    Html(templates.render("dashboard.html", &context).unwrap())
                 }
                 Err(_) => {
                     let error_response = EmployeeErrorResponse {
@@ -305,7 +305,7 @@ pub async fn handle_edit_form_data(
             vec_employees.sort_by(|x, y| x.first_name.cmp(&y.first_name));
 
             context.insert("employees", &vec_employees);
-            Html(templates.render("employees.html", &context).unwrap())
+            Html(templates.render("dashboard.html", &context).unwrap())
         }
         Err(_) => {
             let error_response = EmployeeErrorResponse {
@@ -404,7 +404,7 @@ pub async fn handle_onboard_form_data(
                     vec_employees.sort_by(|x, y| x.first_name.cmp(&y.first_name));
 
                     context.insert("employees", &vec_employees);
-                    Html(templates.render("employees.html", &context).unwrap())
+                    Html(templates.render("dashboard.html", &context).unwrap())
                 }
                 Err(_) => {
                     let error_response = EmployeeErrorResponse {
@@ -462,7 +462,7 @@ pub async fn secure_password(
                     vec_employees.sort_by(|x, y| x.first_name.cmp(&y.first_name));
 
                     context.insert("employees", &vec_employees);
-                    Html(templates.render("employees.html", &context).unwrap())
+                    Html(templates.render("dashboard.html", &context).unwrap())
                 }
                 Err(_) => {
                     let error_response = EmployeeErrorResponse {

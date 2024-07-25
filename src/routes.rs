@@ -30,8 +30,8 @@ pub async fn define_routes(state: AppState, mut tera: Tera) -> Router {
             include_str!("./frontend/templates/employee.html"),
         ),
         (
-            "employees.html",
-            include_str!("./frontend/templates/employees.html"),
+            "dashboard.html",
+            include_str!("./frontend/templates/dashboard.html"),
         ),
         (
             "new_employee.html",
