@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashMap, f32::consts::E, sync::Arc};
 
 use axum::{
     routing::{any, get, post},
@@ -6,6 +6,7 @@ use axum::{
 };
 
 use tera::Tera;
+use tokio::sync::Mutex;
 
 use crate::{
     handlers::{
@@ -18,7 +19,7 @@ use crate::{
     utils::state::AppState,
 };
 
-pub async fn define_routes(shared_state: Arc<AppState>, mut tera: Tera) -> Router {
+pub async fn define_routes(state: AppState, mut tera: Tera) -> Router {
     tera.add_raw_templates(vec![
         ("base.html", include_str!("./frontend/templates/base.html")),
         (
@@ -86,7 +87,5 @@ pub async fn define_routes(shared_state: Arc<AppState>, mut tera: Tera) -> Route
         .route("/delete/employee/:id", get(delete_employee))
         .route("/select/employee/:id", get(select_employee))
         .layer(Extension(Arc::new(tera)))
-        .layer(Extension(shared_state))
-
-    //.with_state(logged_in_state)
+        .with_state(state)
 }

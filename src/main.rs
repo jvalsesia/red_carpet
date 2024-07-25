@@ -6,7 +6,7 @@ use models::admin_models::Admin;
 use routes::define_routes;
 use tera::Tera;
 use tokio::{net::TcpListener, sync::Mutex};
-use utils::state::AppState;
+use utils::state::{self, AppState};
 
 pub mod database;
 pub mod handlers;
@@ -33,14 +33,13 @@ async fn main() {
         info!("Admin already exists");
     }
 
-    // Initialize shared state
-    let shared_state = Arc::new(AppState {
-        user_sessions: Arc::new(Mutex::new(HashMap::new())),
-    });
-
     let tera = Tera::default();
 
-    let app = define_routes(shared_state, tera);
+    let state = AppState {
+        sessions: Arc::new(Mutex::new(HashMap::new())),
+    };
+
+    let app = define_routes(state, tera);
 
     // `axum::Server` is a re-export of `hyper::Server`
     let listener = TcpListener::bind("0.0.0.0:8080").await.unwrap();

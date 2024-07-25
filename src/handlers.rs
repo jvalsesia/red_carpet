@@ -3,7 +3,7 @@ use std::sync::Arc;
 use std::collections::HashMap;
 
 use axum::{
-    extract::{Path, Query},
+    extract::{Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
     Extension, Json,
@@ -11,6 +11,7 @@ use axum::{
 use axum_auth::AuthBasic;
 use log::debug;
 
+use tokio::sync::Mutex;
 use uuid::Uuid;
 
 use crate::{
@@ -24,7 +25,13 @@ use crate::{
             EmployeeResponse, QueryOptions,
         },
     },
-    utils::password_utils::{self, generate_handle, generate_random_password, hash_password},
+    utils::{
+        password_utils::{
+            self, generate_handle, generate_random_password, generate_session_token, hash_password,
+            validate_token_expiration,
+        },
+        state::{self, AppState},
+    },
 };
 use axum::{
     http::{self, Response},
@@ -146,30 +153,69 @@ pub async fn edit_employee(
 }
 
 pub async fn delete_employee(
+    State(state): State<AppState>,
     Path(id): Path<String>,
     Extension(templates): Extension<Templates>,
 ) -> impl IntoResponse {
-    let mut context = Context::new();
-    context.insert("title", "Edit Employee");
+    let sessions = state.sessions.lock().await;
 
-    let result = delete(id.clone()).await;
-    match result {
-        Ok(employees_map) => {
-            let mut vec_employees: Vec<Employee> = employees_map.values().cloned().collect();
-            vec_employees.sort_by(|x, y| x.first_name.cmp(&y.first_name));
+    let token = sessions.get("admin");
+    warn!("token---> {:?}", token);
+    let token_valid = validate_token_expiration(token.unwrap().to_string()).await;
+    match token_valid {
+        true => {
+            let mut context = Context::new();
+            context.insert("title", "Delete Employee");
 
-            context.insert("employees", &vec_employees);
-            Html(templates.render("employees.html", &context).unwrap())
+            let result = delete(id.clone()).await;
+            match result {
+                Ok(employees_map) => {
+                    let mut vec_employees: Vec<Employee> =
+                        employees_map.values().cloned().collect();
+                    vec_employees.sort_by(|x, y| x.first_name.cmp(&y.first_name));
+
+                    context.insert("employees", &vec_employees);
+                    Html(templates.render("employees.html", &context).unwrap())
+                }
+                Err(_) => {
+                    let error_response = EmployeeErrorResponse {
+                        error: "Error fetching employees".to_string(),
+                    };
+                    error!("{error_response:?}");
+                    context.insert("error_message", &error_response);
+                    Html(templates.render("errors.html", &context).unwrap())
+                }
+            }
         }
-        Err(_) => {
-            let error_response = EmployeeErrorResponse {
-                error: "Error fetching employees".to_string(),
-            };
-            error!("{error_response:?}");
-            context.insert("error_message", &error_response);
-            Html(templates.render("errors.html", &context).unwrap())
+        false => {
+            let mut context = Context::new();
+            context.insert("title", "Login to Avaya Red Carpet");
+
+            Html(templates.render("login.html", &context).unwrap())
         }
     }
+
+    // let mut context = Context::new();
+    // context.insert("title", "Edit Employee");
+
+    // let result = delete(id.clone()).await;
+    // match result {
+    //     Ok(employees_map) => {
+    //         let mut vec_employees: Vec<Employee> = employees_map.values().cloned().collect();
+    //         vec_employees.sort_by(|x, y| x.first_name.cmp(&y.first_name));
+
+    //         context.insert("employees", &vec_employees);
+    //         Html(templates.render("employees.html", &context).unwrap())
+    //     }
+    //     Err(_) => {
+    //         let error_response = EmployeeErrorResponse {
+    //             error: "Error fetching employees".to_string(),
+    //         };
+    //         error!("{error_response:?}");
+    //         context.insert("error_message", &error_response);
+    //         Html(templates.render("errors.html", &context).unwrap())
+    //     }
+    // }
 }
 
 pub async fn select_employee(
@@ -749,12 +795,15 @@ async fn verify_admin_password(
 }
 
 pub async fn login_admin(
+    State(state): State<AppState>,
     Extension(templates): Extension<Templates>,
     Form(admin_login_data): Form<Admin>,
 ) -> impl IntoResponse {
     let mut context = Context::new();
 
     warn!("admin_login_data---> {:?}", admin_login_data);
+    let token = generate_session_token(admin_login_data.id.clone()).await;
+    warn!("token---> {:?}", token);
 
     let admin = Admin {
         id: admin_login_data.id.clone(),
@@ -766,11 +815,17 @@ pub async fn login_admin(
     match admin_result {
         Ok(admin) => {
             if admin.id.is_empty() && admin.password.is_none() {
-                context.insert("title", "Login");
+                context.insert("title", "Login to Avaya Red Carpet");
                 context.insert("error_message", "Invalid credentials");
                 Html(templates.render("login.html", &context).unwrap())
             } else {
                 if admin.password.unwrap() == admin_login_data.password.unwrap() {
+                    // Store the session token in the state
+                    state
+                        .sessions
+                        .lock()
+                        .await
+                        .insert("admin".to_string(), token.clone());
                     context.insert("title", "Admin Dashboard");
                     list_employees_renderer(context, templates).await
                 } else {

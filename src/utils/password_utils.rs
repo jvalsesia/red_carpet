@@ -74,6 +74,7 @@ pub async fn generate_session_token(id: String) -> String {
     format!("{}:{}:{}", id, timestamp, random_string)
 }
 
+// 1 hour expiration time
 pub async fn validate_token_expiration(token: String) -> bool {
     let parts: Vec<&str> = token.split(':').collect();
     let timestamp = parts[1].parse::<u64>().unwrap();
