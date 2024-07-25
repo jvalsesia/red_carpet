@@ -92,10 +92,10 @@ pub async fn list_employees(Extension(templates): Extension<Templates>) -> impl 
     list_employees_renderer(context, templates).await
 }
 
-async fn validate_session_token(state: AppState) -> bool {
+async fn validate_session_token(state: AppState, handle: String) -> bool {
     let sessions = state.sessions.lock().await;
-    let token = sessions.get("admin");
-    warn!("token---> {:?}", token);
+    let token = sessions.get(&handle);
+    warn!("validate token ---> {:?}", token);
     if token.is_none() {
         return false;
     }
@@ -141,7 +141,7 @@ pub async fn edit_employee(
     Path(id): Path<String>,
     Extension(templates): Extension<Templates>,
 ) -> impl IntoResponse {
-    let token_valid = validate_session_token(state).await;
+    let token_valid = validate_session_token(state, "admin".to_string()).await;
     match token_valid {
         true => {
             let mut context = Context::new();
@@ -178,7 +178,7 @@ pub async fn delete_employee(
     Path(id): Path<String>,
     Extension(templates): Extension<Templates>,
 ) -> impl IntoResponse {
-    let token_valid = validate_session_token(state).await;
+    let token_valid = validate_session_token(state, "admin".to_string()).await;
     match token_valid {
         true => {
             let mut context = Context::new();
@@ -218,7 +218,7 @@ pub async fn select_employee(
     Path(id): Path<String>,
     Extension(templates): Extension<Templates>,
 ) -> impl IntoResponse {
-    let token_valid = validate_session_token(state).await;
+    let token_valid = validate_session_token(state, "admin".to_string()).await;
     match token_valid {
         true => {
             let mut context = Context::new();
@@ -247,24 +247,6 @@ pub async fn select_employee(
             Html(templates.render("login.html", &context).unwrap())
         }
     }
-    // let mut context = Context::new();
-    // context.insert("title", "Employee");
-
-    // let employee_result = get_employee_by_id(id.clone()).await;
-    // match employee_result {
-    //     Ok(employee) => {
-    //         context.insert("employee", &employee);
-    //         Html(templates.render("employee.html", &context).unwrap())
-    //     }
-    //     Err(_) => {
-    //         let error_response = EmployeeErrorResponse {
-    //             error: "Employee not found".to_string(),
-    //         };
-    //         error!("{error_response:?}");
-    //         context.insert("error_message", &error_response);
-    //         Html(templates.render("errors.html", &context).unwrap())
-    //     }
-    // }
 }
 
 pub async fn handle_edit_form_data(
@@ -347,7 +329,7 @@ pub async fn handle_onboard_form_data(
     Extension(templates): Extension<Templates>,
     Form(onboarding_employee): Form<Employee>,
 ) -> impl IntoResponse {
-    let token_valid = validate_session_token(state).await;
+    let token_valid = validate_session_token(state, "admin".to_string()).await;
     match token_valid {
         true => {
             let mut context = Context::new();
@@ -406,7 +388,7 @@ pub async fn secure_password(
     Extension(templates): Extension<Templates>,
     Form(employee): Form<Employee>,
 ) -> impl IntoResponse {
-    let token_valid = validate_session_token(state).await;
+    let token_valid = validate_session_token(state, "admin".to_string()).await;
     match token_valid {
         true => {
             let mut context = Context::new();
@@ -457,46 +439,6 @@ pub async fn secure_password(
             Html(templates.render("login.html", &context).unwrap())
         }
     }
-    // let mut context = Context::new();
-    // context.insert("title", "Securing Password");
-    // warn!("employee.handle ---> {:?}", employee.handle);
-    // warn!("employee.password ---> {:?}", employee.password);
-
-    // let hashed_password = hash_password(employee.password.clone().unwrap()).await;
-    // warn!("hashed_password ---> {:?}", hashed_password);
-    // let modified_employee = Employee {
-    //     id: employee.id,
-    //     first_name: employee.first_name.clone(),
-    //     last_name: employee.last_name.clone(),
-    //     personal_email: employee.personal_email.clone(),
-    //     avaya_email: employee.avaya_email.clone(),
-    //     age: employee.age,
-    //     diploma: employee.diploma.clone(),
-    //     onboarded: employee.onboarded,
-    //     handle: employee.handle.clone(),
-    //     password: Some(hashed_password),
-    //     secure_password: Some(true),
-    // };
-
-    // let employees_map = update(modified_employee.clone()).await;
-    // match employees_map {
-    //     Ok(employees) => {
-    //         let id = modified_employee.id.clone().unwrap();
-    //         let mut vec_employees: Vec<Employee> = employees.values().cloned().collect();
-    //         vec_employees.sort_by(|x, y| x.first_name.cmp(&y.first_name));
-
-    //         context.insert("employees", &vec_employees);
-    //         Html(templates.render("employees.html", &context).unwrap())
-    //     }
-    //     Err(_) => {
-    //         let error_response = EmployeeErrorResponse {
-    //             error: "Error securing employee".to_string(),
-    //         };
-    //         error!("{error_response:?}");
-    //         context.insert("error_message", &error_response);
-    //         Html(templates.render("errors.html", &context).unwrap())
-    //     }
-    // }
 }
 
 pub async fn health_checker() -> impl IntoResponse {
