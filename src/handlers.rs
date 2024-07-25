@@ -102,6 +102,48 @@ async fn validate_session_token(state: AppState, handle: String) -> bool {
     validate_token_expiration(token.unwrap().to_string()).await
 }
 
+async fn verify_handle_password(
+    handle: String,
+    password: String,
+) -> Result<bool, (StatusCode, &'static str)> {
+    let employee = get_employee_by_handle(handle.clone()).await;
+    match employee {
+        Ok(employee) => {
+            let hashed_password = employee.password.unwrap();
+            let password_verified =
+                password_utils::verify_hashed_password(password, hashed_password).await;
+            if password_verified {
+                Ok(true)
+            } else {
+                Err((StatusCode::UNAUTHORIZED, "Invalid credentials"))
+            }
+        }
+        Err(_) => Err((StatusCode::UNAUTHORIZED, "Invalid credentials")),
+    }
+}
+
+async fn verify_admin_password(
+    id: String,
+    password: String,
+) -> Result<bool, (StatusCode, &'static str)> {
+    let admin = get_admin_by_id(id.clone()).await;
+    match admin {
+        Ok(admin) => {
+            if admin.id.is_empty() && admin.password.is_none() {
+                Err((StatusCode::UNAUTHORIZED, "Invalid credentials"))
+            } else {
+                let random_password = admin.password.unwrap();
+                if password == random_password {
+                    Ok(true)
+                } else {
+                    Err((StatusCode::UNAUTHORIZED, "Invalid credentials"))
+                }
+            }
+        }
+        Err(_) => Err((StatusCode::UNAUTHORIZED, "Invalid credentials")),
+    }
+}
+
 async fn list_employees_renderer(mut context: Context, templates: Arc<Tera>) -> Html<String> {
     let query_options = QueryOptions {
         page: Some(1),
@@ -441,6 +483,68 @@ pub async fn secure_password(
     }
 }
 
+pub async fn logout_admin(
+    State(state): State<AppState>,
+    Extension(templates): Extension<Templates>,
+) -> impl IntoResponse {
+    warn!("Logging out admin");
+    state.sessions.lock().await.remove("admin");
+    let mut context = Context::new();
+    context.insert("title", "Login to Avaya Red Carpet");
+    Html(templates.render("login.html", &context).unwrap())
+}
+
+pub async fn login_admin(
+    State(state): State<AppState>,
+    Extension(templates): Extension<Templates>,
+    Form(admin_login_data): Form<Admin>,
+) -> impl IntoResponse {
+    let mut context = Context::new();
+
+    warn!("admin_login_data---> {:?}", admin_login_data);
+    let token = generate_session_token(admin_login_data.id.clone()).await;
+    warn!("token---> {:?}", token);
+
+    let admin = Admin {
+        id: admin_login_data.id.clone(),
+        password: admin_login_data.password.clone(),
+    };
+
+    let admin_result = get_admin_by_id(admin.id.clone()).await;
+
+    match admin_result {
+        Ok(admin) => {
+            if admin.id.is_empty() && admin.password.is_none() {
+                context.insert("title", "Login to Avaya Red Carpet");
+                context.insert("error_message", "Invalid credentials");
+                Html(templates.render("login.html", &context).unwrap())
+            } else if admin.password.unwrap() == admin_login_data.password.unwrap() {
+                // Store the session token in the state
+                state
+                    .sessions
+                    .lock()
+                    .await
+                    .insert("admin".to_string(), token.clone());
+                context.insert("title", "Admin Dashboard");
+                list_employees_renderer(context, templates).await
+            } else {
+                context.insert("title", "Login");
+                context.insert("error_message", "Invalid credentials");
+                Html(templates.render("login.html", &context).unwrap())
+            }
+        }
+        Err(_) => {
+            context.insert("title", "Login");
+            context.insert("error_message", "Invalid credentials");
+            Html(templates.render("login.html", &context).unwrap())
+        }
+    }
+}
+
+//
+// REST /api/v1 related handlers
+//
+
 pub async fn health_checker() -> impl IntoResponse {
     const MESSAGE: &str = "Avaya Rust Red Carpet";
 
@@ -702,6 +806,7 @@ pub async fn employee_by_handle(
         }
     }
 }
+
 pub async fn generate_handle_and_password(
     AuthBasic((id, password)): AuthBasic,
     Path(emp_id): Path<String>,
@@ -779,106 +884,6 @@ pub async fn generate_handle_and_password(
                 error: "Invalid credentials".to_string(),
             };
             Err((StatusCode::UNAUTHORIZED, Json(error_response)))
-        }
-    }
-}
-
-async fn verify_handle_password(
-    handle: String,
-    password: String,
-) -> Result<bool, (StatusCode, &'static str)> {
-    let employee = get_employee_by_handle(handle.clone()).await;
-    match employee {
-        Ok(employee) => {
-            let hashed_password = employee.password.unwrap();
-            let password_verified =
-                password_utils::verify_hashed_password(password, hashed_password).await;
-            if password_verified {
-                Ok(true)
-            } else {
-                Err((StatusCode::UNAUTHORIZED, "Invalid credentials"))
-            }
-        }
-        Err(_) => Err((StatusCode::UNAUTHORIZED, "Invalid credentials")),
-    }
-}
-
-async fn verify_admin_password(
-    id: String,
-    password: String,
-) -> Result<bool, (StatusCode, &'static str)> {
-    let admin = get_admin_by_id(id.clone()).await;
-    match admin {
-        Ok(admin) => {
-            if admin.id.is_empty() && admin.password.is_none() {
-                Err((StatusCode::UNAUTHORIZED, "Invalid credentials"))
-            } else {
-                let random_password = admin.password.unwrap();
-                if password == random_password {
-                    Ok(true)
-                } else {
-                    Err((StatusCode::UNAUTHORIZED, "Invalid credentials"))
-                }
-            }
-        }
-        Err(_) => Err((StatusCode::UNAUTHORIZED, "Invalid credentials")),
-    }
-}
-
-pub async fn logout_admin(
-    State(state): State<AppState>,
-    Extension(templates): Extension<Templates>,
-) -> impl IntoResponse {
-    warn!("Logging out admin");
-    state.sessions.lock().await.remove("admin");
-    let mut context = Context::new();
-    context.insert("title", "Login to Avaya Red Carpet");
-    Html(templates.render("login.html", &context).unwrap())
-}
-
-pub async fn login_admin(
-    State(state): State<AppState>,
-    Extension(templates): Extension<Templates>,
-    Form(admin_login_data): Form<Admin>,
-) -> impl IntoResponse {
-    let mut context = Context::new();
-
-    warn!("admin_login_data---> {:?}", admin_login_data);
-    let token = generate_session_token(admin_login_data.id.clone()).await;
-    warn!("token---> {:?}", token);
-
-    let admin = Admin {
-        id: admin_login_data.id.clone(),
-        password: admin_login_data.password.clone(),
-    };
-
-    let admin_result = get_admin_by_id(admin.id.clone()).await;
-
-    match admin_result {
-        Ok(admin) => {
-            if admin.id.is_empty() && admin.password.is_none() {
-                context.insert("title", "Login to Avaya Red Carpet");
-                context.insert("error_message", "Invalid credentials");
-                Html(templates.render("login.html", &context).unwrap())
-            } else if admin.password.unwrap() == admin_login_data.password.unwrap() {
-                // Store the session token in the state
-                state
-                    .sessions
-                    .lock()
-                    .await
-                    .insert("admin".to_string(), token.clone());
-                context.insert("title", "Admin Dashboard");
-                list_employees_renderer(context, templates).await
-            } else {
-                context.insert("title", "Login");
-                context.insert("error_message", "Invalid credentials");
-                Html(templates.render("login.html", &context).unwrap())
-            }
-        }
-        Err(_) => {
-            context.insert("title", "Login");
-            context.insert("error_message", "Invalid credentials");
-            Html(templates.render("login.html", &context).unwrap())
         }
     }
 }
