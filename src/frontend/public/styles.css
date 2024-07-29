@@ -25,8 +25,13 @@
 }
 
 .button-container a {
-    width: 150px;
+    width: 200px;
     /* Set your desired fixed width for buttons */
+}
+
+.custom-width-button {
+    width: 200px;
+    /* Set your desired fixed width for the button */
 }
 
 .red-background {
