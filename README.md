@@ -81,12 +81,58 @@ source  ~/.zshenv
 env
 ```
 
+## Run
+```sh
+cargo run
+```
+or
+```sh
+cargo install cargo-watch
+cargo watch -x run
+```
+
+
 ## Troubleshooting
 
 ```sh
 lsof -Pan -i | grep 8080
 lsof -Pan -i | grep red_carp
 ```
+
+
+## Admin credentials
+The administrator credentials are displayed in the logs.
+For intance: 
+```sh
+INFO  red_carpet::database::persistence > admin: Some(Admin { id: "admin", password: Some("99!3-qCmK") })
+```
+
+## Data Repository
+The data repository is created at first time the application start.
+The data folder contains:
+- admin.json
+- employess.json
+
+
+## Usage
+### New Employee
+- Submit: Add Personal Data.
+- Login: Login to Employee Dashboard after it is onboarded and password is secured.
+
+### IT Technician
+- Manage: Login Administrator user to Admin Dashboard.
+
+The list of employees will diplay:
+- Offboarded in red
+- Onboarded in yellow
+- Onboarded and Secure Passwrod in green
+
+The Details button will manage the Onboard processs as well as the Secure Password process.
+
+The Edit button will manage the Employee Personal data process.
+
+The Delete button will delete the Employee Personal data.
+
 
 ## References
 
