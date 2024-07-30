@@ -684,17 +684,9 @@ pub async fn login_employee(
     let handle = employee_login_data.handle.clone().unwrap();
     let password = employee_login_data.password.clone().unwrap();
 
-    if state.sessions.lock().await.contains_key(&handle.clone()) {
-        context.insert("title", "Employee to Avaya Red Carpet");
-        context.insert("error_message", "Already logged in");
-        context.insert("admin", &false);
-
-        Html(
-            templates
-                .render("already_logged_in.html", &context)
-                .unwrap(),
-        )
-    } else {
+    if let std::collections::hash_map::Entry::Vacant(e) =
+        state.sessions.lock().await.entry(handle.clone())
+    {
         warn!("employee_login_data---> {:?}", employee_login_data);
         let token = generate_session_token(handle.clone()).await;
         warn!("token---> {:?}", token);
@@ -713,11 +705,7 @@ pub async fn login_employee(
                     match password_ok {
                         Ok(true) => {
                             // Store the session token in the state
-                            state
-                                .sessions
-                                .lock()
-                                .await
-                                .insert(handle.clone(), token.clone());
+                            e.insert(token.clone());
                             let employees_map = list().await;
                             match employees_map {
                                 Ok(employees) => {
@@ -761,6 +749,16 @@ pub async fn login_employee(
                 Html(templates.render("login.html", &context).unwrap())
             }
         }
+    } else {
+        context.insert("title", "Employee to Avaya Red Carpet");
+        context.insert("error_message", "Already logged in");
+        context.insert("admin", &false);
+
+        Html(
+            templates
+                .render("already_logged_in.html", &context)
+                .unwrap(),
+        )
     }
 }
 
