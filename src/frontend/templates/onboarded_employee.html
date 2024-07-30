@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+
+<body>
+    <div class="container d-flex min-vh-100 justify-content-center align-items-center">
+        <div class="row justify-content-center  shadow-lg p-3 mb-5 bg-body rounded">
+            <h1>{{title}}</h1>
+            <div class="col-md-12">
+
+                {% if employee %}
+                <div class="accordion" id="accordionExample">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                                <strong>Welcome</strong>
+                            </button>
+                        </h2>
+                        <div id="collapseOne" class="accordion-collapse collapse show"
+                            data-bs-parent="#accordionExample">
+                            <div class="accordion-body">
+                                Welcome {{employee.first_name}} {{employee.last_name}} to the team! We're excited to
+                                have you on board. Let's make great things happen together!
+                                <br>
+                                This is your personal information:
+                                <br>
+                                <ul>
+                                    <li>First Name: {{employee.first_name}}</li>
+                                    <li>Last Name: {{employee.last_name}}</li>
+                                    <li>Personal Email: {{employee.personal_email}}</li>
+                                    <li>Age: {{employee.age}}</li>
+                                    <li>Diploma: {{employee.diploma}}</li>
+                                    <li>Handle: {{employee.handle}}</li>
+                                    <li>Email: {{employee.avaya_email}}</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                <strong>Edit Personal Information</strong>
+                            </button>
+                        </h2>
+                        <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
+                            <div class="accordion-body">
+                                <div class="table-responsive">
+
+                                    <form needs-validation class="was-validated" id="update_form" method="POST"
+                                        enctype="application/x-www-form-urlencoded" action="/update/onboarded">
+                                        <input id="id" name="id" type="hidden" value="{{employee.id}}">
+                                        <div class="form-floating">
+
+                                            <input required class="form-control" id="first_name" name="first_name"
+                                                type="text" placeholder="" value="{{employee.first_name}}">
+                                            <label for="first_name">First Name</label>
+                                            <div class="valid-feedback">
+                                                Looks good!
+                                            </div>
+                                            <div class="invalid-feedback">
+                                                Please enter your first name.
+                                            </div>
+                                        </div>
+                                        <br>
+
+                                        <div class="form-floating">
+                                            <input required class="form-control" name="last_name" id="last_name"
+                                                type="text" placeholder="" value="{{employee.last_name}}">
+                                            <label for="last_name">Last Name</label>
+                                            <div class="valid-feedback">
+                                                Looks good!
+                                            </div>
+                                            <div class="invalid-feedback">
+                                                Please enter your last name.
+                                            </div>
+                                        </div>
+                                        <br>
+
+                                        <div class="form-floating">
+
+                                            <input required class="form-control" name="personal_email"
+                                                id="personal_email" type="email" placeholder=""
+                                                value="{{employee.personal_email}}">
+                                            <label for="personal_email">Personal Email</label>
+                                            <div class="valid-feedback">
+                                                Looks good!
+                                            </div>
+                                            <div class="invalid-feedback">
+                                                Please enter a valid personal email.
+                                            </div>
+                                        </div>
+                                        <br>
+
+                                        <div class="form-floating">
+
+                                            <input required class="form-control" name="age" id="age" type="number"
+                                                min="18" placeholder="" value="{{employee.age}}">
+                                            <label for="age">Age</label>
+                                            <div class="valid-feedback">
+                                                Looks good!
+                                            </div>
+                                            <div class="invalid-feedback">
+                                                Please enter your age. Must be 18 or older.
+                                            </div>
+                                        </div>
+                                        <br>
+
+                                        <div class="form-floating">
+
+                                            <input required class="form-control" name="diploma" id="diploma" type="text"
+                                                placeholder="" value="{{employee.diploma}}">
+                                            <label for="diploma">Diploma</label>
+                                            <div class="valid-feedback">
+                                                Looks good!
+                                            </div>
+                                            <div class="invalid-feedback">
+                                                Please enter a diploma.
+                                            </div>
+                                        </div>
+                                        <br>
+
+                                        <!-- Modal -->
+                                        <div class="modal fade" id="save_staticBackdrop" data-bs-backdrop="static"
+                                            data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel"
+                                            aria-hidden="true">
+                                            <div class="modal-dialog modal-dialog-centered">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h1 class="modal-title fs-5" id="staticBackdropLabel">Updating
+                                                            Personal Data
+                                                        </h1>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                            aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        Are you sure you want to update this personal data?
+                                                        <br>
+
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary"
+                                                            data-bs-dismiss="modal">Close</button>
+                                                        <button type="submit" form="save_form"
+                                                            class="btn btn-primary">Yes</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+
+                                </div>
+                                <br>
+
+                                <div class="button-container">
+                                    <a class="btn btn-primary" data-bs-toggle="modal"
+                                        data-bs-target="#save_staticBackdrop">Save</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                                <strong>Team</strong>
+                            </button>
+                        </h2>
+                        <div id="collapseOne" class="accordion-collapse collapse show"
+                            data-bs-parent="#accordionExample">
+                            <div class="accordion-body">
+                                This is your Team:
+                                <br>
+
+                                <div class="container mt-5">
+                                    <div class="row">
+                                        {% for employee in employees %}
+                                        {% if employee.onboarded and employee.secure_password %}
+                                        <div class="col-md-4">
+                                            <div class="card">
+                                                <div class="card-body d-flex align-items-center">
+                                                    <div class="avatar">
+                                                        {{ employee.first_name | truncate(length=1, end="")}}{{
+                                                        employee.last_name | truncate(length=1, end="")}}
+                                                    </div>
+                                                    <div class="ml-3">
+                                                        <h5 class="card-title">{{ employee.handle }}</h5>
+                                                        <p class="card-text">
+                                                            <strong>
+                                                                {{ employee.first_name }}
+                                                                {{ employee.last_name }}
+                                                            </strong>
+                                                            <br>
+                                                            {{ employee.avaya_email }}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+
+                <br>
+                <div class="button-container">
+                    <a href="/employee/logout/{{employee.handle}}" class="btn btn-secondary">Logout</a>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+</body>
+
+
+{% endblock %}

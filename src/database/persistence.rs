@@ -220,13 +220,26 @@ pub async fn get_employee_by_handle(handle: String) -> Result<Employee> {
     let data = fs::read_to_string(employee_file_path).expect("Unable to read file");
     let map_employees: HashMap<String, Employee> = serde_json::from_str(&data)?;
 
-    let employee = map_employees
+    let employee_result = map_employees
         .values()
-        .find(|employee| employee.handle == Some(handle.clone()))
-        .unwrap()
-        .clone();
+        .find(|employee| employee.handle == Some(handle.clone()));
 
-    Ok(employee)
+    match employee_result {
+        Some(employee) => Ok(employee.clone()),
+        None => Ok(Employee {
+            id: None,
+            first_name: "".to_string(),
+            last_name: "".to_string(),
+            personal_email: None,
+            avaya_email: None,
+            age: 0,
+            diploma: "".to_string(),
+            onboarded: None,
+            handle: None,
+            password: None,
+            secure_password: None,
+        }),
+    }
 }
 
 pub async fn get_employee_by_id(id: String) -> Result<Employee> {

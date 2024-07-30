@@ -127,13 +127,17 @@ async fn verify_handle_password(
     let employee = get_employee_by_handle(handle.clone()).await;
     match employee {
         Ok(employee) => {
-            let hashed_password = employee.password.unwrap();
-            let password_verified =
-                password_utils::verify_hashed_password(password, hashed_password).await;
-            if password_verified {
-                Ok(true)
-            } else {
+            if employee.id == None {
                 Err((StatusCode::UNAUTHORIZED, "Invalid credentials"))
+            } else {
+                let hashed_password = employee.password.unwrap();
+                let password_verified =
+                    password_utils::verify_hashed_password(password, hashed_password).await;
+                if password_verified {
+                    Ok(true)
+                } else {
+                    Err((StatusCode::UNAUTHORIZED, "Invalid credentials"))
+                }
             }
         }
         Err(_) => Err((StatusCode::UNAUTHORIZED, "Invalid credentials")),
@@ -336,6 +340,75 @@ pub async fn handle_edit_form_data(
     }
 }
 
+pub async fn handle_personal_data_form_data(
+    State(state): State<AppState>,
+    Extension(templates): Extension<Templates>,
+    Form(modified_employee_data): Form<Employee>,
+) -> impl IntoResponse {
+    let mut new_employee = modified_employee_data.clone();
+    debug!("{new_employee:?}");
+
+    let employee_result = get_employee_by_id(new_employee.clone().id.unwrap()).await;
+
+    match employee_result {
+        Ok(employee) => {
+            // update onboarde fields
+            new_employee.avaya_email = employee.avaya_email;
+            new_employee.onboarded = employee.onboarded;
+            new_employee.handle = employee.handle;
+            new_employee.password = employee.password;
+            new_employee.secure_password = employee.secure_password;
+
+            let token_valid =
+                validate_session_token(state, new_employee.clone().handle.unwrap()).await;
+            match token_valid {
+                true => {
+                    let mut context = Context::new();
+                    context.insert("title", "Personal Data");
+
+                    let employees_map = update(new_employee.clone()).await;
+
+                    match employees_map {
+                        Ok(employees) => {
+                            let mut vec_employees: Vec<Employee> =
+                                employees.values().cloned().collect();
+                            vec_employees.sort_by(|x, y| x.first_name.cmp(&y.first_name));
+                            context.insert("employees", &vec_employees);
+                            context.insert("employee", &new_employee);
+
+                            Html(
+                                templates
+                                    .render("onboarded_employee.html", &context)
+                                    .unwrap(),
+                            )
+                        }
+                        Err(_) => {
+                            let error_response = EmployeeErrorResponse {
+                                error: "Error updating employee".to_string(),
+                            };
+                            error!("{error_response:?}");
+                            context.insert("error_message", &error_response);
+                            Html(templates.render("errors.html", &context).unwrap())
+                        }
+                    }
+                }
+                false => {
+                    let mut context = Context::new();
+                    context.insert("title", "Login to Avaya Red Carpet");
+
+                    Html(templates.render("login.html", &context).unwrap())
+                }
+            }
+        }
+        Err(_) => {
+            let mut context = Context::new();
+            context.insert("title", "Login to Avaya Red Carpet");
+
+            Html(templates.render("login.html", &context).unwrap())
+        }
+    }
+}
+
 pub async fn handle_save_form_data(
     Extension(templates): Extension<Templates>,
     Form(new_employee_data): Form<Employee>,
@@ -459,28 +532,44 @@ pub async fn secure_password(
 
             let hashed_password = hash_password(employee.password.clone().unwrap()).await;
             warn!("hashed_password ---> {:?}", hashed_password);
-            let modified_employee = Employee {
-                id: employee.id,
-                first_name: employee.first_name.clone(),
-                last_name: employee.last_name.clone(),
-                personal_email: employee.personal_email.clone(),
-                avaya_email: employee.avaya_email.clone(),
-                age: employee.age,
-                diploma: employee.diploma.clone(),
-                onboarded: employee.onboarded,
-                handle: employee.handle.clone(),
-                password: Some(hashed_password),
-                secure_password: Some(true),
-            };
 
-            let employees_map = update(modified_employee.clone()).await;
-            match employees_map {
-                Ok(employees) => {
-                    let mut vec_employees: Vec<Employee> = employees.values().cloned().collect();
-                    vec_employees.sort_by(|x, y| x.first_name.cmp(&y.first_name));
+            let existing_employee_result = get_employee_by_id(employee.id.clone().unwrap()).await;
 
-                    context.insert("employees", &vec_employees);
-                    Html(templates.render("dashboard.html", &context).unwrap())
+            match existing_employee_result {
+                Ok(existing_employee) => {
+                    let modified_employee = Employee {
+                        id: existing_employee.id,
+                        first_name: existing_employee.first_name.clone(),
+                        last_name: existing_employee.last_name.clone(),
+                        personal_email: existing_employee.personal_email.clone(),
+                        avaya_email: existing_employee.avaya_email.clone(),
+                        age: existing_employee.age,
+                        diploma: existing_employee.diploma.clone(),
+                        onboarded: existing_employee.onboarded,
+                        handle: existing_employee.handle.clone(),
+                        password: Some(hashed_password),
+                        secure_password: Some(true),
+                    };
+
+                    let employees_map = update(modified_employee.clone()).await;
+                    match employees_map {
+                        Ok(employees) => {
+                            let mut vec_employees: Vec<Employee> =
+                                employees.values().cloned().collect();
+                            vec_employees.sort_by(|x, y| x.first_name.cmp(&y.first_name));
+
+                            context.insert("employees", &vec_employees);
+                            Html(templates.render("dashboard.html", &context).unwrap())
+                        }
+                        Err(_) => {
+                            let error_response = EmployeeErrorResponse {
+                                error: "Error securing employee".to_string(),
+                            };
+                            error!("{error_response:?}");
+                            context.insert("error_message", &error_response);
+                            Html(templates.render("errors.html", &context).unwrap())
+                        }
+                    }
                 }
                 Err(_) => {
                     let error_response = EmployeeErrorResponse {
@@ -570,6 +659,21 @@ pub async fn login_admin(
     }
 }
 
+pub async fn logout_employee(
+    State(state): State<AppState>,
+    Path(handle): Path<String>,
+    Extension(templates): Extension<Templates>,
+) -> impl IntoResponse {
+    warn!("Logging out employee");
+    state.sessions.lock().await.remove(&handle);
+    let mut context = Context::new();
+    context.insert("title", "Employee to Avaya Red Carpet");
+    context.insert("error_message", "Logged out successfully");
+    context.insert("admin", &false);
+
+    Html(templates.render("login.html", &context).unwrap())
+}
+
 pub async fn login_employee(
     State(state): State<AppState>,
     Extension(templates): Extension<Templates>,
@@ -614,9 +718,29 @@ pub async fn login_employee(
                                 .lock()
                                 .await
                                 .insert(handle.clone(), token.clone());
-                            context.insert("title", "Employee Dashboard");
-                            context.insert("employee", &employee);
-                            Html(templates.render("new_employee.html", &context).unwrap())
+                            let employees_map = list().await;
+                            match employees_map {
+                                Ok(employees) => {
+                                    let mut vec_employees: Vec<Employee> =
+                                        employees.values().cloned().collect();
+                                    vec_employees.sort_by(|x, y| x.first_name.cmp(&y.first_name));
+
+                                    context.insert("employees", &vec_employees);
+                                    context.insert("title", "Employee Dashboard");
+                                    context.insert("employee", &employee);
+
+                                    Html(
+                                        templates
+                                            .render("onboarded_employee.html", &context)
+                                            .unwrap(),
+                                    )
+                                }
+                                Err(_) => {
+                                    context.insert("title", "Employee to Avaya Red Carpet");
+                                    context.insert("error_message", "Invalid credentials");
+                                    Html(templates.render("login.html", &context).unwrap())
+                                }
+                            }
                         }
                         Ok(false) => {
                             context.insert("title", "Employee to Avaya Red Carpet");

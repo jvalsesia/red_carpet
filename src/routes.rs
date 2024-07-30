@@ -9,11 +9,7 @@ use tera::Tera;
 
 use crate::{
     handlers::{
-        create_employee, delete_employee, edit_employee, employees_list,
-        generate_handle_and_password, get_employee, handle_edit_form_data,
-        handle_onboard_form_data, handle_save_form_data, health_checker, index, list_employees,
-        login, login_admin, login_admin_page, login_employee, logout_admin, new_employee_page,
-        save_result_page, secure_password, select_employee, styles,
+        create_employee, delete_employee, edit_employee, employees_list, generate_handle_and_password, get_employee, handle_edit_form_data, handle_onboard_form_data, handle_personal_data_form_data, handle_save_form_data, health_checker, index, list_employees, login, login_admin, login_admin_page, login_employee, logout_admin, logout_employee, new_employee_page, save_result_page, secure_password, select_employee, styles
     },
     utils::state::AppState,
 };
@@ -65,6 +61,10 @@ pub async fn define_routes(state: AppState, mut tera: Tera) -> Router {
             "already_logged_in.html",
             include_str!("./frontend/templates/already_logged_in.html"),
         ),
+        (
+            "onboarded_employee.html",
+            include_str!("./frontend/templates/onboarded_employee.html"),
+        ),
     ])
     .unwrap();
 
@@ -86,9 +86,11 @@ pub async fn define_routes(state: AppState, mut tera: Tera) -> Router {
         .route("/admin/login", post(login_admin))
         .route("/admin/logout", get(logout_admin))
         .route("/employee/login", post(login_employee))
+        .route("/employee/logout/:handle", get(logout_employee))
         .route("/list/employees", get(list_employees))
         .route("/edit/employee/:id", get(edit_employee))
         .route("/update/employee", post(handle_edit_form_data))
+        .route("/update/onboarded", post(handle_personal_data_form_data))
         .route("/onboard/employee", post(handle_onboard_form_data))
         .route("/securepassword/employee", post(secure_password))
         .route("/new/employee", get(new_employee_page))
