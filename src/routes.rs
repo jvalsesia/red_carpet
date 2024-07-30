@@ -9,7 +9,7 @@ use tera::Tera;
 
 use crate::{
     handlers::{
-        create_employee, delete_employee, edit_employee, employees_list,
+        already_logged_ind, create_employee, delete_employee, edit_employee, employees_list,
         generate_handle_and_password, get_employee, handle_edit_form_data,
         handle_onboard_form_data, handle_save_form_data, health_checker, index, list_employees,
         login, login_admin, logout_admin, new_employee_page, save_result_page, secure_password,
@@ -56,6 +56,10 @@ pub async fn define_routes(state: AppState, mut tera: Tera) -> Router {
         (
             "login.html",
             include_str!("./frontend/templates/login.html"),
+        ),
+        (
+            "already_logged_in.html",
+            include_str!("./frontend/templates/already_logged_in.html"),
         ),
     ])
     .unwrap();

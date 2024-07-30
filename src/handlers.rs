@@ -65,6 +65,17 @@ pub async fn login(Extension(templates): Extension<Templates>) -> impl IntoRespo
     Html(templates.render("login.html", &context).unwrap())
 }
 
+pub async fn already_logged_ind(Extension(templates): Extension<Templates>) -> impl IntoResponse {
+    let mut context = Context::new();
+    context.insert("title", "Admin already logged in");
+
+    Html(
+        templates
+            .render("already_logged_in.html", &context)
+            .unwrap(),
+    )
+}
+
 pub async fn errors(Extension(templates): Extension<Templates>) -> impl IntoResponse {
     let mut context = Context::new();
     context.insert("title", "Error");
@@ -500,43 +511,54 @@ pub async fn login_admin(
     Form(admin_login_data): Form<Admin>,
 ) -> impl IntoResponse {
     let mut context = Context::new();
+    if state.sessions.lock().await.contains_key("admin") {
+        context.insert("title", "Login to Avaya Red Carpet");
+        context.insert("error_message", "Already logged in");
+        context.insert("already_logged_in", &true);
 
-    warn!("admin_login_data---> {:?}", admin_login_data);
-    let token = generate_session_token(admin_login_data.id.clone()).await;
-    warn!("token---> {:?}", token);
+        Html(
+            templates
+                .render("already_logged_in.html", &context)
+                .unwrap(),
+        )
+    } else {
+        warn!("admin_login_data---> {:?}", admin_login_data);
+        let token = generate_session_token(admin_login_data.id.clone()).await;
+        warn!("token---> {:?}", token);
 
-    let admin = Admin {
-        id: admin_login_data.id.clone(),
-        password: admin_login_data.password.clone(),
-    };
+        let new_admin = Admin {
+            id: admin_login_data.id.clone(),
+            password: admin_login_data.password.clone(),
+        };
 
-    let admin_result = get_admin_by_id(admin.id.clone()).await;
+        let admin_result = get_admin_by_id(new_admin.id.clone()).await;
 
-    match admin_result {
-        Ok(admin) => {
-            if admin.id.is_empty() && admin.password.is_none() {
-                context.insert("title", "Login to Avaya Red Carpet");
-                context.insert("error_message", "Invalid credentials");
-                Html(templates.render("login.html", &context).unwrap())
-            } else if admin.password.unwrap() == admin_login_data.password.unwrap() {
-                // Store the session token in the state
-                state
-                    .sessions
-                    .lock()
-                    .await
-                    .insert("admin".to_string(), token.clone());
-                context.insert("title", "Admin Dashboard");
-                list_employees_renderer(context, templates).await
-            } else {
+        match admin_result {
+            Ok(admin) => {
+                if admin.id.is_empty() && admin.password.is_none() {
+                    context.insert("title", "Login to Avaya Red Carpet");
+                    context.insert("error_message", "Invalid credentials");
+                    Html(templates.render("login.html", &context).unwrap())
+                } else if admin.password.unwrap() == new_admin.password.unwrap() {
+                    // Store the session token in the state
+                    state
+                        .sessions
+                        .lock()
+                        .await
+                        .insert("admin".to_string(), token.clone());
+                    context.insert("title", "Admin Dashboard");
+                    list_employees_renderer(context, templates).await
+                } else {
+                    context.insert("title", "Login");
+                    context.insert("error_message", "Invalid credentials");
+                    Html(templates.render("login.html", &context).unwrap())
+                }
+            }
+            Err(_) => {
                 context.insert("title", "Login");
                 context.insert("error_message", "Invalid credentials");
                 Html(templates.render("login.html", &context).unwrap())
             }
-        }
-        Err(_) => {
-            context.insert("title", "Login");
-            context.insert("error_message", "Invalid credentials");
-            Html(templates.render("login.html", &context).unwrap())
         }
     }
 }
