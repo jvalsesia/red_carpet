@@ -133,6 +133,10 @@ The Edit button will manage the Employee Personal data process.
 
 The Delete button will delete the Employee Personal data.
 
+### API
+The mandatory API can tested with Postman collection:
+
+Avaya Red Carpet.postman_collection.json
 
 ## References
 

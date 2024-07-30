@@ -1,4 +1,4 @@
-use std::{future::IntoFuture, sync::Arc};
+use std::sync::Arc;
 
 use std::collections::HashMap;
 
@@ -127,7 +127,7 @@ async fn verify_handle_password(
     let employee = get_employee_by_handle(handle.clone()).await;
     match employee {
         Ok(employee) => {
-            if employee.id == None {
+            if Option::is_none(&employee.password) {
                 Err((StatusCode::UNAUTHORIZED, "Invalid credentials"))
             } else {
                 let hashed_password = employee.password.unwrap();
