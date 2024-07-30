@@ -10,102 +10,130 @@
             <div class="col-md-12">
                 <div class="table-responsive">
 
+                    {% if employee %}
                     <form needs-validation class="was-validated" id="save_form" method="POST"
-                        enctype="application/x-www-form-urlencoded" action="/save/employee">
-
-                        <div class="form-floating">
-                            <input required class="form-control" id="first_name" name="first_name" type="text"
-                                placeholder="" value="">
-                            <label for="first_name">First Name</label>
-                            <div class="valid-feedback">
-                                Looks good!
+                        enctype="application/x-www-form-urlencoded" action="/update/employee">
+                        <input id="id" name="id" type="hidden" value="{{employee.id}}">
+                        {% else %}
+                        <form needs-validation class="was-validated" id="save_form" method="POST"
+                            enctype="application/x-www-form-urlencoded" action="/save/employee">
+                            {% endif %}
+                            <div class="form-floating">
+                                {% if employee %}
+                                <input required class="form-control" id="first_name" name="first_name" type="text"
+                                    placeholder="" value="{{employee.first_name}}">
+                                {% else %}
+                                <input required class="form-control" id="first_name" name="first_name" type="text"
+                                    placeholder="" value="">
+                                {% endif %}
+                                <label for="first_name">First Name</label>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                                <div class="invalid-feedback">
+                                    Please enter your first name.
+                                </div>
                             </div>
-                            <div class="invalid-feedback">
-                                Please enter your first name.
-                            </div>
-                        </div>
-                        <br>
+                            <br>
 
-                        <div class="form-floating">
-                            <input required class="form-control" name="last_name" id="last_name" type="text"
-                                placeholder="" value="">
-                            <label for="last_name">Last Name</label>
-                            <div class="valid-feedback">
-                                Looks good!
+                            <div class="form-floating">
+                                {% if employee %}
+                                <input required class="form-control" name="last_name" id="last_name" type="text"
+                                    placeholder="" value="{{employee.last_name}}">
+                                {% else %}
+                                <input required class="form-control" id="last_name" name="last_name" type="text"
+                                    placeholder="" value="">
+                                {% endif %}
+                                <label for="last_name">Last Name</label>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                                <div class="invalid-feedback">
+                                    Please enter your last name.
+                                </div>
                             </div>
-                            <div class="invalid-feedback">
-                                Please enter your last name.
+                            <br>
+
+                            <div class="form-floating">
+                                {% if employee %}
+                                <input required class="form-control" name="personal_email" id="personal_email"
+                                    type="email" placeholder="" value="{{employee.personal_email}}">
+                                {% else %}
+                                <input required class="form-control" name="personal_email" id="personal_email"
+                                    type="email" placeholder="" value="">
+                                {% endif %}
+                                <label for="personal_email">Personal Email</label>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                                <div class="invalid-feedback">
+                                    Please enter a valid personal email.
+                                </div>
                             </div>
-                        </div>
-                        <br>
+                            <br>
 
-                        <div class="form-floating">
-
-                            <input required class="form-control" name="personal_email" id="personal_email" type="email"
-                                placeholder="" value="">
-                            <label for="personal_email">Personal Email</label>
-                            <div class="valid-feedback">
-                                Looks good!
+                            <div class="form-floating">
+                                {% if employee %}
+                                <input required class="form-control" name="age" id="age" type="number" min="18"
+                                    placeholder="" value="{{employee.age}}">
+                                {% else %}
+                                <input required class="form-control" name="age" id="age" type="number" min="18"
+                                    placeholder="" value="">
+                                {% endif %}
+                                <label for="age">Age</label>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                                <div class="invalid-feedback">
+                                    Please enter your age. Must be 18 or older.
+                                </div>
                             </div>
-                            <div class="invalid-feedback">
-                                Please enter a valid personal email.
+                            <br>
+
+                            <div class="form-floating">
+                                {% if employee %}
+                                <input required class="form-control" name="diploma" id="diploma" type="text"
+                                    placeholder="" value="{{employee.diploma}}">
+                                {% else %}
+                                <input required class="form-control" name="diploma" id="diploma" type="text"
+                                    placeholder="" value="">
+                                {% endif %}
+                                <label for="diploma">Diploma</label>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                                <div class="invalid-feedback">
+                                    Please enter a diploma.
+                                </div>
                             </div>
-                        </div>
-                        <br>
+                            <br>
 
-                        <div class="form-floating">
+                            <!-- Modal -->
+                            <div class="modal fade" id="save_staticBackdrop" data-bs-backdrop="static"
+                                data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel"
+                                aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h1 class="modal-title fs-5" id="staticBackdropLabel">Creating New Personal
+                                                Data
+                                            </h1>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            Are you sure you want to save this personal data?
+                                            <br>
 
-                            <input required class="form-control" name="age" id="age" type="number" min="18"
-                                placeholder="" value="">
-                            <label for="age">Age</label>
-                            <div class="valid-feedback">
-                                Looks good!
-                            </div>
-                            <div class="invalid-feedback">
-                                Please enter your age. Must be 18 or older.
-                            </div>
-                        </div>
-                        <br>
-
-                        <div class="form-floating">
-
-                            <input required class="form-control" name="diploma" id="diploma" type="text" placeholder=""
-                                value="">
-                            <label for="diploma">Diploma</label>
-                            <div class="valid-feedback">
-                                Looks good!
-                            </div>
-                            <div class="invalid-feedback">
-                                Please enter a diploma.
-                            </div>
-                        </div>
-                        <br>
-
-                        <!-- Modal -->
-                        <div class="modal fade" id="save_staticBackdrop" data-bs-backdrop="static"
-                            data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel"
-                            aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h1 class="modal-title fs-5" id="staticBackdropLabel">Creating New Personal Data
-                                        </h1>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                            aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        Are you sure you want to save this personal data?
-                                        <br>
-
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary"
-                                            data-bs-dismiss="modal">Close</button>
-                                        <button type="submit" form="save_form" class="btn btn-primary">Yes</button>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary"
+                                                data-bs-dismiss="modal">Close</button>
+                                            <button type="submit" form="save_form" class="btn btn-primary">Yes</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
                 </div>
                 <br>
 

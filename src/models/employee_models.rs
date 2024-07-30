@@ -15,6 +15,12 @@ pub struct Employee {
     pub secure_password: Option<bool>,
 }
 
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct EmployeeForm {
+    pub handle: Option<String>,
+    pub password: Option<String>,
+}
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct EmployeeRequestBody {
     pub first_name: String,

@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{future::IntoFuture, sync::Arc};
 
 use std::collections::HashMap;
 
@@ -20,8 +20,8 @@ use crate::{
     models::{
         admin_models::Admin,
         employee_models::{
-            Employee, EmployeeErrorResponse, EmployeeListResponse, EmployeeRequestBody,
-            EmployeeResponse, QueryOptions,
+            Employee, EmployeeErrorResponse, EmployeeForm, EmployeeListResponse,
+            EmployeeRequestBody, EmployeeResponse, QueryOptions,
         },
     },
     utils::{
@@ -63,6 +63,13 @@ pub async fn login(Extension(templates): Extension<Templates>) -> impl IntoRespo
     context.insert("title", "Login to Avaya Red Carpet");
 
     Html(templates.render("login.html", &context).unwrap())
+}
+
+pub async fn login_admin_page(Extension(templates): Extension<Templates>) -> impl IntoResponse {
+    let mut context = Context::new();
+    context.insert("title", "Administrator Login to Avaya Red Carpet");
+
+    Html(templates.render("admin_login.html", &context).unwrap())
 }
 
 pub async fn already_logged_ind(Extension(templates): Extension<Templates>) -> impl IntoResponse {
@@ -501,8 +508,8 @@ pub async fn logout_admin(
     warn!("Logging out admin");
     state.sessions.lock().await.remove("admin");
     let mut context = Context::new();
-    context.insert("title", "Login to Avaya Red Carpet");
-    Html(templates.render("login.html", &context).unwrap())
+    context.insert("title", "Administrator Login to Avaya Red Carpet");
+    Html(templates.render("admin_login.html", &context).unwrap())
 }
 
 pub async fn login_admin(
@@ -514,7 +521,7 @@ pub async fn login_admin(
     if state.sessions.lock().await.contains_key("admin") {
         context.insert("title", "Login to Avaya Red Carpet");
         context.insert("error_message", "Already logged in");
-        context.insert("already_logged_in", &true);
+        context.insert("admin", &true);
 
         Html(
             templates
@@ -556,6 +563,76 @@ pub async fn login_admin(
             }
             Err(_) => {
                 context.insert("title", "Login");
+                context.insert("error_message", "Invalid credentials");
+                Html(templates.render("login.html", &context).unwrap())
+            }
+        }
+    }
+}
+
+pub async fn login_employee(
+    State(state): State<AppState>,
+    Extension(templates): Extension<Templates>,
+    Form(employee_login_data): Form<EmployeeForm>,
+) -> impl IntoResponse {
+    let mut context = Context::new();
+
+    let handle = employee_login_data.handle.clone().unwrap();
+    let password = employee_login_data.password.clone().unwrap();
+
+    if state.sessions.lock().await.contains_key(&handle.clone()) {
+        context.insert("title", "Employee to Avaya Red Carpet");
+        context.insert("error_message", "Already logged in");
+        context.insert("admin", &false);
+
+        Html(
+            templates
+                .render("already_logged_in.html", &context)
+                .unwrap(),
+        )
+    } else {
+        warn!("employee_login_data---> {:?}", employee_login_data);
+        let token = generate_session_token(handle.clone()).await;
+        warn!("token---> {:?}", token);
+
+        let employee_result = get_employee_by_handle(handle.clone()).await;
+
+        match employee_result {
+            Ok(employee) => {
+                if employee.onboarded == Some(false) {
+                    context.insert("title", "Employee to Avaya Red Carpet");
+                    context.insert("error_message", "Invalid credentials");
+                    Html(templates.render("login.html", &context).unwrap())
+                } else {
+                    let password_ok = verify_handle_password(handle.clone(), password).await;
+
+                    match password_ok {
+                        Ok(true) => {
+                            // Store the session token in the state
+                            state
+                                .sessions
+                                .lock()
+                                .await
+                                .insert(handle.clone(), token.clone());
+                            context.insert("title", "Employee Dashboard");
+                            context.insert("employee", &employee);
+                            Html(templates.render("new_employee.html", &context).unwrap())
+                        }
+                        Ok(false) => {
+                            context.insert("title", "Employee to Avaya Red Carpet");
+                            context.insert("error_message", "Invalid credentials");
+                            Html(templates.render("login.html", &context).unwrap())
+                        }
+                        Err(_) => {
+                            context.insert("title", "Employee to Avaya Red Carpet");
+                            context.insert("error_message", "Invalid credentials");
+                            Html(templates.render("login.html", &context).unwrap())
+                        }
+                    }
+                }
+            }
+            Err(_) => {
+                context.insert("title", "Employee to Avaya Red Carpet");
                 context.insert("error_message", "Invalid credentials");
                 Html(templates.render("login.html", &context).unwrap())
             }

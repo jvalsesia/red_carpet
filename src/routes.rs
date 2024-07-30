@@ -9,11 +9,11 @@ use tera::Tera;
 
 use crate::{
     handlers::{
-        already_logged_ind, create_employee, delete_employee, edit_employee, employees_list,
+        create_employee, delete_employee, edit_employee, employees_list,
         generate_handle_and_password, get_employee, handle_edit_form_data,
         handle_onboard_form_data, handle_save_form_data, health_checker, index, list_employees,
-        login, login_admin, logout_admin, new_employee_page, save_result_page, secure_password,
-        select_employee, styles,
+        login, login_admin, login_admin_page, login_employee, logout_admin, new_employee_page,
+        save_result_page, secure_password, select_employee, styles,
     },
     utils::state::AppState,
 };
@@ -58,6 +58,10 @@ pub async fn define_routes(state: AppState, mut tera: Tera) -> Router {
             include_str!("./frontend/templates/login.html"),
         ),
         (
+            "admin_login.html",
+            include_str!("./frontend/templates/admin_login.html"),
+        ),
+        (
             "already_logged_in.html",
             include_str!("./frontend/templates/already_logged_in.html"),
         ),
@@ -78,8 +82,10 @@ pub async fn define_routes(state: AppState, mut tera: Tera) -> Router {
         .route("/styles.css", any(styles))
         .route("/", get(index))
         .route("/login", get(login))
+        .route("/login/admin/page", get(login_admin_page))
         .route("/admin/login", post(login_admin))
         .route("/admin/logout", get(logout_admin))
+        .route("/employee/login", post(login_employee))
         .route("/list/employees", get(list_employees))
         .route("/edit/employee/:id", get(edit_employee))
         .route("/update/employee", post(handle_edit_form_data))
