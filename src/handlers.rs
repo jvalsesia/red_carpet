@@ -487,19 +487,59 @@ pub async fn handle_onboard_form_data(
                 secure_password: Some(false),
             };
 
-            let employees_map = update(employee).await;
+            let _ = update(employee.clone()).await;
+            context.insert("employee", &employee);
 
-            match employees_map {
-                Ok(employees) => {
-                    let mut vec_employees: Vec<Employee> = employees.values().cloned().collect();
-                    vec_employees.sort_by(|x, y| x.first_name.cmp(&y.first_name));
+            Html(templates.render("employee.html", &context).unwrap())
+        }
+        false => {
+            let mut context = Context::new();
+            context.insert("title", "Login to Avaya Red Carpet");
 
-                    context.insert("employees", &vec_employees);
-                    Html(templates.render("dashboard.html", &context).unwrap())
+            Html(templates.render("login.html", &context).unwrap())
+        }
+    }
+}
+
+pub async fn reset_password_by_id(
+    State(state): State<AppState>,
+    Extension(templates): Extension<Templates>,
+    Path(id): Path<String>,
+) -> impl IntoResponse {
+    let token_valid = validate_session_token(state, "admin".to_string()).await;
+    match token_valid {
+        true => {
+            let mut context = Context::new();
+            context.insert("title", "Reset Password");
+
+            let employee_result = get_employee_by_id(id.clone()).await;
+
+            match employee_result {
+                Ok(employee) => {
+                    let new_password = generate_random_password().await;
+
+                    let modified_employee = Employee {
+                        id: employee.id,
+                        first_name: employee.first_name.clone(),
+                        last_name: employee.last_name.clone(),
+                        personal_email: employee.personal_email.clone(),
+                        avaya_email: employee.avaya_email.clone(),
+                        age: employee.age,
+                        diploma: employee.diploma.clone(),
+                        onboarded: employee.onboarded,
+                        handle: employee.handle.clone(),
+                        password: Some(new_password),
+                        secure_password: Some(false),
+                    };
+
+                    let _ = update(modified_employee.clone()).await;
+                    context.insert("employee", &modified_employee);
+
+                    Html(templates.render("employee.html", &context).unwrap())
                 }
                 Err(_) => {
                     let error_response = EmployeeErrorResponse {
-                        error: "Error onboarding employee".to_string(),
+                        error: "Error resetting password".to_string(),
                     };
                     error!("{error_response:?}");
                     context.insert("error_message", &error_response);
@@ -551,25 +591,10 @@ pub async fn secure_password(
                         secure_password: Some(true),
                     };
 
-                    let employees_map = update(modified_employee.clone()).await;
-                    match employees_map {
-                        Ok(employees) => {
-                            let mut vec_employees: Vec<Employee> =
-                                employees.values().cloned().collect();
-                            vec_employees.sort_by(|x, y| x.first_name.cmp(&y.first_name));
+                    let _ = update(modified_employee.clone()).await;
+                    context.insert("employee", &modified_employee);
 
-                            context.insert("employees", &vec_employees);
-                            Html(templates.render("dashboard.html", &context).unwrap())
-                        }
-                        Err(_) => {
-                            let error_response = EmployeeErrorResponse {
-                                error: "Error securing employee".to_string(),
-                            };
-                            error!("{error_response:?}");
-                            context.insert("error_message", &error_response);
-                            Html(templates.render("errors.html", &context).unwrap())
-                        }
-                    }
+                    Html(templates.render("employee.html", &context).unwrap())
                 }
                 Err(_) => {
                     let error_response = EmployeeErrorResponse {
