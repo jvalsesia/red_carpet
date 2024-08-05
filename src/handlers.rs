@@ -167,23 +167,11 @@ async fn verify_admin_password(
 }
 
 async fn list_employees_renderer(mut context: Context, templates: Arc<Tera>) -> Html<String> {
-    let query_options = QueryOptions {
-        page: Some(1),
-        limit: Some(1000),
-    };
-    let opts: Option<Query<QueryOptions>> = Some(Query(query_options));
-
-    let Query(opts) = opts.unwrap_or_default();
-
-    let limit = opts.limit.unwrap_or(10);
-    let offset = (opts.page.unwrap_or(1) - 1) * limit;
-
     let result = list().await;
 
     match result {
         Ok(employees_map) => {
-            let filtered_employees: HashMap<String, Employee> =
-                employees_map.into_iter().skip(offset).take(limit).collect();
+            let filtered_employees: HashMap<String, Employee> = employees_map.into_iter().collect();
             let mut vec_employees: Vec<Employee> = filtered_employees.values().cloned().collect();
             vec_employees.sort_by(|x, y: &Employee| x.first_name.cmp(&y.first_name));
             context.insert("employees", &vec_employees);
