@@ -454,7 +454,7 @@ pub async fn handle_onboard_form_data(
     match token_valid {
         true => {
             let mut context = Context::new();
-            context.insert("title", "Onboarding Employee");
+            context.insert("title", "Employee");
             let new_handle = generate_handle(
                 onboarding_employee.first_name.clone(),
                 onboarding_employee.last_name.clone(),
@@ -498,7 +498,7 @@ pub async fn reset_password_by_id(
     match token_valid {
         true => {
             let mut context = Context::new();
-            context.insert("title", "Reset Password");
+            context.insert("title", "Employee");
 
             let employee_result = get_employee_by_id(id.clone()).await;
 
@@ -553,7 +553,7 @@ pub async fn secure_password(
     match token_valid {
         true => {
             let mut context = Context::new();
-            context.insert("title", "Securing Password");
+            context.insert("title", "Employee");
 
             warn!("employee.handle ---> {:?}", employee.handle);
             warn!("employee.password ---> {:?}", employee.password);
