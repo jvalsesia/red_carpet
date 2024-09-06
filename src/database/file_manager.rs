@@ -6,7 +6,7 @@ use std::sync::Mutex;
 use log::{debug, info};
 
 use crate::models::admin_models::Admin;
-use crate::models::employee_models::Employee;
+use crate::models::employee_models::{Employee, EmployeeRequestBody};
 
 #[derive(Debug)]
 pub struct FileManager {
@@ -127,14 +127,30 @@ impl FileManager {
     }
 
     // update employee
-    pub fn update_employee(&self, id: &str, to_be_update_employee: Employee) -> io::Result<()> {
+    pub fn update_employee(
+        &self,
+        id: &str,
+        to_be_update_employee: EmployeeRequestBody,
+    ) -> io::Result<()> {
         let mut employees = self.employees.lock().unwrap();
-        employees
-            .entry(id.to_string())
-            .and_modify(|e| *e = to_be_update_employee.clone())
-            .or_insert(to_be_update_employee);
-        let content = serde_json::to_string_pretty(&*employees)?;
-        self.save_employee_content_to_file(&content)
+        let employee = employees.get_mut(id);
+
+        // if employee is found, update the fields
+        if let Some(employee) = employee {
+            employee.id = Some(id.to_string());
+            employee.first_name = to_be_update_employee.first_name;
+            employee.last_name = to_be_update_employee.last_name;
+            employee.personal_email = to_be_update_employee.personal_email;
+            employee.age = to_be_update_employee.age;
+            employee.diploma = to_be_update_employee.diploma;
+            let content = serde_json::to_string_pretty(&*employees)?;
+            self.save_employee_content_to_file(&content)
+        } else {
+            Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Employee not found",
+            ))
+        }
     }
 
     pub fn get_employee(&self, id: &str) -> Option<Employee> {

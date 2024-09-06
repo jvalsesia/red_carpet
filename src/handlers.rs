@@ -1,4 +1,4 @@
-use std::{f32::consts::E, sync::Arc};
+use std::sync::Arc;
 
 use std::collections::HashMap;
 
@@ -324,10 +324,10 @@ pub async fn handle_edit_form_data(
     let mut context = Context::new();
     context.insert("title", "Edit Employee");
 
-    let update_result = state.file_manager.update_employee(
-        modified_employee_data.id.clone().unwrap().as_str(),
-        modified_employee_data.clone(),
-    );
+    // let update_result = state.file_manager.update_employee(
+    //     modified_employee_data.id.clone().unwrap().as_str(),
+    //     modified_employee_data.clone(),
+    // );
 
     let employees_map = update(modified_employee_data.clone()).await;
     match employees_map {
@@ -869,14 +869,11 @@ pub async fn update_employee(
 pub async fn update_employee_by_id(
     State(state): State<AppState>,
     Path(id): Path<String>,
-    Json(body): Json<Employee>,
+    Json(body): Json<EmployeeRequestBody>,
 ) -> Result<Json<EmployeeListResponse>, (StatusCode, Json<EmployeeErrorResponse>)> {
-    let employee = body.clone();
+    // let employee = body.clone();
 
-    let update_result = state
-        .file_manager
-        .update_employee(id.as_str(), employee.clone());
-
+    let update_result = state.file_manager.update_employee(id.as_str(), body);
     match update_result {
         Ok(_) => {
             // list employess
