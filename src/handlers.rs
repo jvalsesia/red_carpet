@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{f32::consts::E, sync::Arc};
 
 use std::collections::HashMap;
 
@@ -169,21 +169,24 @@ async fn verify_admin_password(
 async fn list_employees_renderer(mut context: Context, templates: Arc<Tera>) -> Html<String> {
     let query_options = QueryOptions {
         page: Some(1),
-        limit: Some(1000),
+        per_page: Some(1000),
     };
     let opts: Option<Query<QueryOptions>> = Some(Query(query_options));
 
     let Query(opts) = opts.unwrap_or_default();
 
-    let limit = opts.limit.unwrap_or(10);
-    let offset = (opts.page.unwrap_or(1) - 1) * limit;
+    let page = opts.per_page.unwrap_or(0);
+    let per_page = opts.page.unwrap_or(10);
 
     let result = list().await;
 
     match result {
         Ok(employees_map) => {
-            let filtered_employees: HashMap<String, Employee> =
-                employees_map.into_iter().skip(offset).take(limit).collect();
+            let filtered_employees: HashMap<String, Employee> = employees_map
+                .into_iter()
+                .skip(page)
+                .take(per_page)
+                .collect();
             let mut vec_employees: Vec<Employee> = filtered_employees.values().cloned().collect();
             vec_employees.sort_by(|x, y: &Employee| x.first_name.cmp(&y.first_name));
             context.insert("employees", &vec_employees);
@@ -314,11 +317,17 @@ pub async fn select_employee(
 }
 
 pub async fn handle_edit_form_data(
+    State(state): State<AppState>,
     Extension(templates): Extension<Templates>,
     Form(modified_employee_data): Form<Employee>,
 ) -> impl IntoResponse {
     let mut context = Context::new();
     context.insert("title", "Edit Employee");
+
+    let update_result = state.file_manager.update_employee(
+        modified_employee_data.id.clone().unwrap().as_str(),
+        modified_employee_data.clone(),
+    );
 
     let employees_map = update(modified_employee_data.clone()).await;
     match employees_map {
@@ -856,7 +865,44 @@ pub async fn update_employee(
     }
 }
 
+// update employee by id
+pub async fn update_employee_by_id(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Json(body): Json<Employee>,
+) -> Result<Json<EmployeeListResponse>, (StatusCode, Json<EmployeeErrorResponse>)> {
+    let employee = body.clone();
+
+    let update_result = state
+        .file_manager
+        .update_employee(id.as_str(), employee.clone());
+
+    match update_result {
+        Ok(_) => {
+            // list employess
+            let vec_employees = state.file_manager.list_employees();
+
+            let json_response = EmployeeListResponse {
+                message: format!("Employee {id:?} updated successfully"),
+                results: vec_employees.len(),
+                employees: vec_employees,
+            };
+
+            debug!("{json_response:?}");
+            Ok(Json(json_response))
+        }
+        Err(_) => {
+            let error_response = EmployeeErrorResponse {
+                error: "Error updating employee".to_string(),
+            };
+            error!("{error_response:?}");
+            Err((StatusCode::NOT_MODIFIED, Json(error_response)))
+        }
+    }
+}
+
 pub async fn create_employee(
+    State(state): State<AppState>,
     AuthBasic((id, password)): AuthBasic,
     Json(body): Json<EmployeeRequestBody>,
 ) -> Result<Json<EmployeeResponse>, (StatusCode, Json<EmployeeErrorResponse>)> {
@@ -865,44 +911,49 @@ pub async fn create_employee(
     match verified_result {
         Ok(verified) => {
             if verified {
-                let employee = Employee {
-                    id: Some(Uuid::new_v4().to_string()),
-                    first_name: body.first_name,
-                    last_name: body.last_name,
-                    personal_email: body.personal_email,
-                    avaya_email: None,
-                    age: body.age,
-                    diploma: body.diploma,
-                    onboarded: Some(false),
-                    handle: None,
-                    password: None,
-                    secure_password: Some(false),
-                };
-                let save_result = save(employee.clone()).await;
-                match save_result {
-                    Ok(saved) => {
-                        if saved {
+                // check if employee already exists
+                let employee_exists = state
+                    .file_manager
+                    .check_employee_exists(&body.first_name, &body.last_name);
+
+                if employee_exists {
+                    let error_response = EmployeeErrorResponse {
+                        error: "Employee already exists".to_string(),
+                    };
+                    warn!("{error_response:?}");
+                    return Err((StatusCode::ALREADY_REPORTED, Json(error_response)));
+                } else {
+                    let employee = Employee {
+                        id: Some(Uuid::new_v4().to_string()),
+                        first_name: body.first_name,
+                        last_name: body.last_name,
+                        personal_email: body.personal_email,
+                        avaya_email: None,
+                        age: body.age,
+                        diploma: body.diploma,
+                        onboarded: Some(false),
+                        handle: None,
+                        password: None,
+                        secure_password: Some(false),
+                    };
+                    let save_result = state.file_manager.add_employee(employee.clone());
+                    match save_result {
+                        Ok(_) => {
                             let json_response = EmployeeResponse {
                                 message: "Employee created successfully".to_string(),
                                 data: employee,
                             };
                             debug!("{json_response:?}");
                             Ok(Json(json_response))
-                        } else {
+                        }
+                        Err(error) => {
+                            debug!("{error:?}");
                             let error_response = EmployeeErrorResponse {
-                                error: "Employee already exists or Employee age must be greater than 18 and diploma must not be empty".to_string(),
+                                error: error.to_string(),
                             };
                             warn!("{error_response:?}");
-                            Err((StatusCode::ALREADY_REPORTED, Json(error_response)))
+                            Err((StatusCode::NOT_MODIFIED, Json(error_response)))
                         }
-                    }
-                    Err(error) => {
-                        debug!("{error:?}");
-                        let error_response = EmployeeErrorResponse {
-                            error: error.to_string(),
-                        };
-                        warn!("{error_response:?}");
-                        Err((StatusCode::NOT_MODIFIED, Json(error_response)))
                     }
                 }
             } else {
@@ -924,6 +975,7 @@ pub async fn create_employee(
 }
 
 pub async fn employees_list(
+    State(state): State<AppState>,
     AuthBasic((id, password)): AuthBasic,
     opts: Option<Query<QueryOptions>>,
 ) -> Result<Json<EmployeeListResponse>, (StatusCode, Json<EmployeeErrorResponse>)> {
@@ -934,40 +986,19 @@ pub async fn employees_list(
             if verified {
                 let Query(opts) = opts.unwrap_or_default();
 
-                let limit = opts.limit.unwrap_or(10);
-                let offset = (opts.page.unwrap_or(1) - 1) * limit;
+                let page = opts.page.unwrap_or(0);
+                let per_page = opts.per_page.unwrap_or(10);
 
-                let employees_list = list().await;
+                let mut employees_list = state.file_manager.paginate_employees(page, per_page);
 
-                match employees_list {
-                    Ok(employees) => {
-                        let filtered_employees: HashMap<String, Employee> = employees
-                            .into_iter()
-                            .skip(offset)
-                            .take(limit)
-                            .filter(|(_id, employee)| employee.onboarded == Some(false))
-                            .collect();
-
-                        let mut vec_employees: Vec<Employee> =
-                            filtered_employees.values().cloned().collect();
-                        vec_employees.sort_by(|x, y| x.first_name.cmp(&y.first_name));
-
-                        let json_response = EmployeeListResponse {
-                            message: "Employees list".to_string(),
-                            results: filtered_employees.len(),
-                            employees: vec_employees,
-                        };
-                        debug!("{json_response:?}");
-                        Ok(Json(json_response))
-                    }
-                    Err(error) => {
-                        debug!("{error:?}");
-                        let error_response = EmployeeErrorResponse {
-                            error: error.to_string(),
-                        };
-                        Err((StatusCode::NOT_MODIFIED, Json(error_response)))
-                    }
-                }
+                employees_list.sort_by(|x, y| x.first_name.cmp(&y.first_name));
+                let json_response = EmployeeListResponse {
+                    message: "Employees list".to_string(),
+                    results: employees_list.len(),
+                    employees: employees_list,
+                };
+                debug!("{json_response:?}");
+                Ok(Json(json_response))
             } else {
                 let error_response = EmployeeErrorResponse {
                     error: "Invalid credentials".to_string(),

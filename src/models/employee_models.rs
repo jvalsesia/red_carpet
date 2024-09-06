@@ -59,7 +59,7 @@ pub struct UpdateEmployeeSchema {
 #[derive(Debug, Deserialize, Default)]
 pub struct QueryOptions {
     pub page: Option<usize>,
-    pub limit: Option<usize>,
+    pub per_page: Option<usize>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

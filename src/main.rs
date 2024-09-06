@@ -1,6 +1,9 @@
 use std::{collections::HashMap, sync::Arc};
 
-use database::persistence::{create_admin, create_persistence_store};
+use database::{
+    file_manager::FileManager,
+    persistence::{create_admin, create_persistence_store},
+};
 use log::info;
 use models::admin_models::Admin;
 use routes::define_routes;
@@ -13,6 +16,10 @@ pub mod handlers;
 pub mod models;
 pub mod routes;
 pub mod utils;
+
+const DATA_DIR: &str = "data";
+const ADMIN_DATA_FILE: &str = "data/admin.json";
+const EMPLOYEE_DATA_FILE: &str = "data/employees.json";
 
 #[tokio::main]
 async fn main() {
@@ -35,8 +42,11 @@ async fn main() {
 
     let tera = Tera::default();
 
+    let file_manager = Arc::new(FileManager::new(EMPLOYEE_DATA_FILE, ADMIN_DATA_FILE).unwrap());
+
     let state = AppState {
         sessions: Arc::new(Mutex::new(HashMap::new())),
+        file_manager,
     };
 
     let app = define_routes(state, tera);
