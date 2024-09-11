@@ -7,7 +7,7 @@ use std::{
     path::Path,
 };
 
-use crate::{models::admin_models::Admin, utils::password_utils::generate_random_password};
+use crate::{models::admin_models::Admin, utils::password_utils::hash_password};
 
 const DATA_DIR: &str = "data";
 pub const ADMIN_DATA_FILE: &str = "data/admin.json";
@@ -55,11 +55,12 @@ pub async fn create_admin(admin: Admin) -> Result<bool> {
                     //  admins = serde_json::from_str(&data)?;
                     map_admins = serde_json::from_str(&data)?;
                 }
-                let password = generate_random_password().await;
+
+                let hashed_password = hash_password(admin.password.unwrap()).await;
 
                 let new_admin = Admin {
                     id: admin.id.clone(),
-                    password: Some(password.clone()),
+                    password: Some(hashed_password),
                 };
 
                 map_admins.insert(admin.id.clone(), new_admin.clone());

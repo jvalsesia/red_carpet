@@ -402,11 +402,21 @@ pub async fn handle_onboard_form_data(
         true => {
             let mut context = Context::new();
             context.insert("title", "Employee");
-            let new_handle = generate_handle(
+            let mut new_handle = generate_handle(
                 onboarding_employee.first_name.clone(),
                 onboarding_employee.last_name.clone(),
             )
             .await;
+
+            // get employee by handle
+            let employee_by_handle_result = state
+                .file_manager
+                .get_employee_by_handle(new_handle.as_str());
+
+            if employee_by_handle_result.is_some() {
+                // update new handle with 6 random digits as suffix
+                new_handle = format!("{}{}", new_handle, rand::random::<u32>() % 100000);
+            }
 
             let employee = Employee {
                 id: onboarding_employee.id.clone(),
@@ -633,11 +643,6 @@ pub async fn login_admin(
         let token = generate_session_token(admin_login_data.id.clone()).await;
         warn!("token---> {:?}", token);
 
-        let new_admin = Admin {
-            id: admin_login_data.id.clone(),
-            password: admin_login_data.password.clone(),
-        };
-
         let admin_login_result = state
             .file_manager
             .get_admin_by_id(admin_login_data.id.clone().as_str());
@@ -648,7 +653,12 @@ pub async fn login_admin(
                     context.insert("title", "Login to Avaya Red Carpet");
                     context.insert("error_message", "Invalid credentials");
                     Html(templates.render("login.html", &context).unwrap())
-                } else if admin.password.unwrap() == new_admin.password.unwrap() {
+                } else if verify_hashed_password(
+                    admin_login_data.password.unwrap(),
+                    admin.clone().password.unwrap(),
+                )
+                .await
+                {
                     // Store the session token in the state
                     state
                         .sessions
@@ -716,22 +726,29 @@ pub async fn login_employee(
                     context.insert("error_message", "Invalid credentials");
                     Html(templates.render("login.html", &context).unwrap())
                 } else {
-                    let password_ok =
-                        verify_hashed_password(password, employee.clone().password.unwrap()).await;
+                    if employee.secure_password == Some(true) {
+                        let password_ok =
+                            verify_hashed_password(password, employee.clone().password.unwrap())
+                                .await;
 
-                    if password_ok {
-                        // Store the session token in the state
-                        e.insert(token.clone());
-                        let employees_vec = state.file_manager.list_employees();
-                        context.insert("employees", &employees_vec);
-                        context.insert("title", "Employee Dashboard");
-                        context.insert("employee", &employee);
+                        if password_ok {
+                            // Store the session token in the state
+                            e.insert(token.clone());
+                            let employees_vec = state.file_manager.list_employees();
+                            context.insert("employees", &employees_vec);
+                            context.insert("title", "Employee Dashboard");
+                            context.insert("employee", &employee);
 
-                        Html(
-                            templates
-                                .render("onboarded_employee.html", &context)
-                                .unwrap(),
-                        )
+                            Html(
+                                templates
+                                    .render("onboarded_employee.html", &context)
+                                    .unwrap(),
+                            )
+                        } else {
+                            context.insert("title", "Employee to Avaya Red Carpet");
+                            context.insert("error_message", "Invalid credentials");
+                            Html(templates.render("login.html", &context).unwrap())
+                        }
                     } else {
                         context.insert("title", "Employee to Avaya Red Carpet");
                         context.insert("error_message", "Invalid credentials");

@@ -26,7 +26,7 @@ async fn main() {
 
     let admin = Admin {
         id: "admin".to_string(),
-        password: None,
+        password: Some("admin".to_string()),
     };
 
     let admin_created = create_admin(admin).await;
