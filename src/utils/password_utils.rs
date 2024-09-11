@@ -85,3 +85,71 @@ pub async fn validate_token_expiration(token: String) -> bool {
     let elapsed_time = current_timestamp - timestamp;
     elapsed_time < 3600
 }
+
+#[cfg(test)]
+mod tests {
+    use tokio::runtime::Runtime;
+
+    use super::*;
+
+    #[test]
+    fn test_generate_handle() {
+        let rt = Runtime::new().unwrap();
+        let handle = rt.block_on(generate_handle("John".to_string(), "Doe".to_string()));
+        assert_eq!(handle, "jdoe");
+    }
+
+    #[test]
+    fn test_generate_random_password() {
+        let rt = Runtime::new().unwrap();
+        let password = rt.block_on(generate_random_password());
+        assert_eq!(password.len(), 9);
+    }
+
+    #[test]
+    fn test_hash_password() {
+        let rt = Runtime::new().unwrap();
+        let password = "password123".to_string();
+        let hashed_password = rt.block_on(hash_password(password.clone()));
+        assert!(hashed_password.starts_with("$pbkdf2-sha256$"));
+    }
+
+    #[test]
+    fn test_verify_hashed_password() {
+        let rt = Runtime::new().unwrap();
+        let password = "password123".to_string();
+        let hashed_password = rt.block_on(hash_password(password.clone()));
+        let is_valid = rt.block_on(verify_hashed_password(password, hashed_password));
+        assert!(is_valid);
+    }
+
+    #[test]
+    fn test_generate_session_token() {
+        let rt = Runtime::new().unwrap();
+        let token = rt.block_on(generate_session_token("user123".to_string()));
+        let parts: Vec<&str> = token.split(':').collect();
+        assert_eq!(parts.len(), 3);
+        assert_eq!(parts[0], "user123");
+    }
+
+    #[test]
+    fn test_validate_token_expiration() {
+        let rt = Runtime::new().unwrap();
+        let token = rt.block_on(generate_session_token("user123".to_string()));
+        let is_valid = rt.block_on(validate_token_expiration(token));
+        assert!(is_valid);
+    }
+
+    #[test]
+    fn test_expired_token() {
+        let rt = Runtime::new().unwrap();
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs()
+            - 3601;
+        let token = format!("user123:{}:randomstring", timestamp);
+        let is_valid = rt.block_on(validate_token_expiration(token));
+        assert!(!is_valid);
+    }
+}

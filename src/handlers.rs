@@ -725,35 +725,32 @@ pub async fn login_employee(
                     context.insert("title", "Employee to Avaya Red Carpet");
                     context.insert("error_message", "Invalid credentials");
                     Html(templates.render("login.html", &context).unwrap())
-                } else {
-                    if employee.secure_password == Some(true) {
-                        let password_ok =
-                            verify_hashed_password(password, employee.clone().password.unwrap())
-                                .await;
+                } else if employee.secure_password == Some(true) {
+                    let password_ok =
+                        verify_hashed_password(password, employee.clone().password.unwrap()).await;
 
-                        if password_ok {
-                            // Store the session token in the state
-                            e.insert(token.clone());
-                            let employees_vec = state.file_manager.list_employees();
-                            context.insert("employees", &employees_vec);
-                            context.insert("title", "Employee Dashboard");
-                            context.insert("employee", &employee);
+                    if password_ok {
+                        // Store the session token in the state
+                        e.insert(token.clone());
+                        let employees_vec = state.file_manager.list_employees();
+                        context.insert("employees", &employees_vec);
+                        context.insert("title", "Employee Dashboard");
+                        context.insert("employee", &employee);
 
-                            Html(
-                                templates
-                                    .render("onboarded_employee.html", &context)
-                                    .unwrap(),
-                            )
-                        } else {
-                            context.insert("title", "Employee to Avaya Red Carpet");
-                            context.insert("error_message", "Invalid credentials");
-                            Html(templates.render("login.html", &context).unwrap())
-                        }
+                        Html(
+                            templates
+                                .render("onboarded_employee.html", &context)
+                                .unwrap(),
+                        )
                     } else {
                         context.insert("title", "Employee to Avaya Red Carpet");
                         context.insert("error_message", "Invalid credentials");
                         Html(templates.render("login.html", &context).unwrap())
                     }
+                } else {
+                    context.insert("title", "Employee to Avaya Red Carpet");
+                    context.insert("error_message", "Invalid credentials");
+                    Html(templates.render("login.html", &context).unwrap())
                 }
             }
             None => {
