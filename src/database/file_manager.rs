@@ -3,7 +3,7 @@ use std::fs::OpenOptions;
 use std::io::{self, Read, Write};
 use std::sync::Mutex;
 
-use log::{debug, info};
+use log::info;
 
 use crate::models::admin_models::Admin;
 use crate::models::employee_models::Employee;
@@ -64,20 +64,21 @@ impl FileManager {
         Ok(())
     }
 
-    fn save_admins_to_file(&self) -> io::Result<()> {
-        let admins = self.admins.lock().unwrap();
-        let content = serde_json::to_string(&*admins)?;
+    // save admin content to file
+    fn save_admins_content_to_file(&self, content: &str) -> io::Result<()> {
         let mut file = OpenOptions::new()
             .write(true)
             .create(true)
             .truncate(true)
             .open(&self.admin_file_path)?;
         file.write_all(content.as_bytes())?;
+        file.flush()?;
         Ok(())
     }
 
     // check employee exists by first name and last name
     pub fn check_employee_exists(&self, first_name: &str, last_name: &str) -> bool {
+        info!("Checking if employee exists: {} {}", first_name, last_name);
         let employees = self.employees.lock().unwrap();
         employees
             .values()
@@ -86,18 +87,25 @@ impl FileManager {
 
     // add employee
     pub fn add_employee(&self, employee: Employee) -> io::Result<()> {
-        debug!("Adding employee: {:?}", employee);
+        info!("Adding employee: {:?}", employee);
         let mut employees = self.employees.lock().unwrap();
-        debug!("Employees: {:?}", employees);
         employees.insert(employee.id.clone().unwrap(), employee);
-        debug!("Employees after insert: {:?}", employees);
         let content = serde_json::to_string_pretty(&*employees)?;
-
         self.save_employee_content_to_file(&content)
+    }
+
+    // add admin
+    pub fn add_admin(&self, admin: Admin) -> io::Result<()> {
+        info!("Adding admin: {:?}", admin);
+        let mut admins = self.admins.lock().unwrap();
+        admins.insert(admin.id.clone(), admin);
+        let content = serde_json::to_string_pretty(&*admins)?;
+        self.save_admins_content_to_file(&content)
     }
 
     // list employees sorted by first name
     pub fn list_employees(&self) -> Vec<Employee> {
+        info!("Listing employees");
         let employees = self.employees.lock().unwrap();
         let mut vec_employees: Vec<Employee> = employees.values().cloned().collect();
         vec_employees.sort_by(|a, b| a.first_name.cmp(&b.first_name));
@@ -106,6 +114,7 @@ impl FileManager {
 
     // paginate employees
     pub fn paginate_employees(&self, page: usize, per_page: usize) -> Vec<Employee> {
+        info!("Paginating employees");
         let employees = self.employees.lock().unwrap();
         let employees: Vec<Employee> = employees.values().cloned().collect();
 
@@ -128,21 +137,50 @@ impl FileManager {
 
     // update employee
     pub fn update_employee(&self, id: &str, to_be_update_employee: Employee) -> io::Result<()> {
+        info!("Updating employee: {:?}", to_be_update_employee);
         let mut employees = self.employees.lock().unwrap();
+
+        // insert the updated employee
+        let insert_result = employees.insert(id.to_string(), to_be_update_employee);
+
+        // if the employee is not found, return an error
+        if insert_result.is_none() {
+            Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Employee not found",
+            ))
+        } else {
+            let content = serde_json::to_string_pretty(&*employees)?;
+            self.save_employee_content_to_file(&content)
+        }
+    }
+
+    // get employee by handle
+    pub fn get_employee_by_handle(&self, handle: &str) -> Option<Employee> {
+        info!("Getting employee by handle: {}", handle);
+        let employees = self.employees.lock().unwrap();
         employees
-            .entry(id.to_string())
-            .and_modify(|e| *e = to_be_update_employee.clone())
-            .or_insert(to_be_update_employee);
-        let content = serde_json::to_string_pretty(&*employees)?;
-        self.save_employee_content_to_file(&content)
+            .values()
+            .find(|employee| employee.handle == Some(handle.to_string()))
+            .cloned()
     }
 
     pub fn get_employee(&self, id: &str) -> Option<Employee> {
+        info!("Getting employee by id: {}", id);
         self.get_employee_by_id(id)
     }
 
     pub fn get_admin_by_id(&self, id: &str) -> Option<Admin> {
+        info!("Getting admin by id: {}", id);
         let admins = self.admins.lock().unwrap();
         admins.get(id).cloned()
+    }
+    // delete employee
+    pub fn delete_employee(&self, id: &str) -> io::Result<()> {
+        info!("Deleting employee by id: {}", id);
+        let mut employees = self.employees.lock().unwrap();
+        employees.remove(id);
+        let content = serde_json::to_string_pretty(&*employees)?;
+        self.save_employee_content_to_file(&content)
     }
 }

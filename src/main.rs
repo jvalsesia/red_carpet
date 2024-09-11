@@ -2,7 +2,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use database::{
     file_manager::FileManager,
-    persistence::{create_admin, create_persistence_store},
+    persistence::{create_admin, create_persistence_store, ADMIN_DATA_FILE, EMPLOYEE_DATA_FILE},
 };
 use log::info;
 use models::admin_models::Admin;
@@ -16,10 +16,6 @@ pub mod handlers;
 pub mod models;
 pub mod routes;
 pub mod utils;
-
-const DATA_DIR: &str = "data";
-const ADMIN_DATA_FILE: &str = "data/admin.json";
-const EMPLOYEE_DATA_FILE: &str = "data/employees.json";
 
 #[tokio::main]
 async fn main() {
